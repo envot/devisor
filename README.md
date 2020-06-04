@@ -2,7 +2,7 @@
 
 DEVice SupraVISOR
 
-The [DeVisor](https://gitlab.com/envot/devisor) is a python software to control, monitor and configure devices in a [EoT](https://envot.io).
+The [DeVisor](https://gitlab.com/envot/devisor) is a python software to control, monitor and configure devices in an [Environment of Things (EoT)](https://envot.io).
 
                     __________________________
                     |                        |
@@ -22,5 +22,9 @@ The [DeVisor](https://gitlab.com/envot/devisor) is a python software to control,
                      /\                     /\ 
                       \=====================/
 
-The program's main section part is communicating with an [MQTT](https://mqtt.org) Broker specified at the startup following the [Homie convention](https://homieiot.github.io/).
-For every device an extra thread with an extra connection to the Broker is created, which can be controlled, monitored and configured via the MQTT Broker.
+The program's main section part is communicating with an [MQTT](https://mqtt.org) Broker following the [Homie convention](https://homieiot.github.io/).
+For every device, an extra thread with an extra connection to the Broker is created, which can be controlled, monitored and configured via the MQTT Broker.
+
+Start your local python instance:
+
+> python start_devisor.py
