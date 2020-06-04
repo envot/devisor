@@ -2,7 +2,7 @@
 
 DEVice SupraVISOR
 
-The [DeVisor](https://gitlab/envot/devisor) is a python software to control, monitor and configure devices in a [EoT](https://envot.io).
+The [DeVisor](https://gitlab.com/envot/devisor) is a python software to control, monitor and configure devices in a [EoT](https://envot.io).
 
                     __________________________
                     |                        |
