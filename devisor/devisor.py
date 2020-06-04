@@ -127,7 +127,7 @@ devices['running'] = {
 }
 
 devices['start/type'] = {
-    'valueInit' : 'testprint',
+    'valueInit' : 'testdevice',
     'format' : availableDevices,
     'datatype' : 'enum',
     'settable' : True,
