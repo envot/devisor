@@ -28,3 +28,7 @@ For every device, an extra thread with an extra connection to the Broker is crea
 Start your local python instance:
 
 > python start_devisor.py
+
+Start a docker container:
+
+> docker run --rm envot/devisor
