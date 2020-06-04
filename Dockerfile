@@ -9,7 +9,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY ./devisor /devisor/devisor/
 COPY ./start_devisor.py /devisor/start_devisor.py
-COPY ./raw_controller.py /devisor/raw_controller.py
 
 ENV PYTHONUNBUFFERED TRUE
 ENV HOST "host.docker.internal"
