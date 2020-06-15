@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*- 
 
-# Python program to control, monitor and configure devices in an EoT: https://envot.io
+# Python program to control, monitor and configure devices in a EoT: https://envot.io
 # Klemens Schueppert : schueppi@envot.io
 
+import sys
 import time
 from threading import Timer
 
@@ -193,17 +194,19 @@ class Motor():
     def curr_pos(self):
         timeDiff = time.time() - self.startTime
         if timeDiff == 0:
-            return 0
+            posDiff = 0
         if timeDiff < self.sT:
-            return 0.5*self.a0*timeDiff**2
+            posDiff = 0.5*self.a0*timeDiff**2
         else:
-            return self.v0*(timeDiff-self.sT) + self.xS
+            posDiff =  self.v0*(timeDiff-self.sT) + self.xS
+        return self.pos - (-1)**self.runningIndex * posDiff
 
 
 class motortimers(DeviceBase):
     def init_pre(self):
         self.motors = {}
         self.initNodes = initNodes
+
 
     def create_motor(self, name, addresses):
         if name in self.motors:
