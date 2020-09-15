@@ -1,3 +1,5 @@
+import setuptools
+
 setuptools.setup(
     name="device-computerstats",
     version="0.0.1",
