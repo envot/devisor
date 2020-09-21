@@ -31,6 +31,6 @@ class Connections():
 
     def _start(self, address):
         addressArr = address.split(',')
-        exec('from .'+addressArr[0] + ' import '+addressArr[0])
-        newDevice= eval(addressArr[0]+'(self.devisor, "'+','.join(addressArr[1:])+'")')
+        condev = devisor_import(addressArr[0], 'connection')
+        newDevice= condev.ConnectionClass(self.devisor, ','.join(addressArr[1:]))
         return newDevice
