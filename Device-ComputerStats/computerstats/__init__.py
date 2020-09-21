@@ -1,1 +1,1 @@
-from .computerstats import *
+from .driver import DeviceClass

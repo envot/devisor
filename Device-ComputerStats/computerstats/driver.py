@@ -51,7 +51,7 @@ laptop['battery']= {
 
 initNodes['laptop']=laptop
 
-class computerstats(DeviceBase):
+class DeviceClass(DeviceBase):
     def init_pre(self):
         self.initNodes = initNodes
         
