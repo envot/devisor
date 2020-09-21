@@ -3,9 +3,6 @@ docker-build-master:
   stage: build
   script:
     - pip install twine
-    - cd Device-ComputerStats
-    - python3 setup.py check sdist bdist
-    - python3 setup.py sdist bdist_wheel
-    - python3 -m twine upload --repository-url https://gitlab.com/api/v4/projects/19185895/packages/pypi -u "$PYPI_USER" -p "$PYPI_PASSWORD" dist/*
+    - ./uploadPackages
   only:
     - packages
