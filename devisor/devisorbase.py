@@ -7,6 +7,10 @@
 
 import time
 import traceback
+import sys
+import subprocess
+import pathlib
+import importlib
 
 import paho.mqtt.client as mqttClient
 
@@ -17,6 +21,12 @@ from .paramProcess import init_param_property
 from .params import initDeviceAttributes,initNodeAttributes
 
 HOMIE_SET = "/set"
+
+TYPE_DICT = {
+        'device': 'devices',
+        'connection': 'connectoins',
+        'utility': 'utilities',
+        }
 
 def keep_private_parameter(pB):
     if pB.value != pB.valueOld:
@@ -301,3 +311,30 @@ class DeviceBase():
             self.params['$stats/uptime'].publish_value()
             time.sleep(self.params['$stats/interval'].value*0.9)
 
+
+def devisor_import(dev, className, package_type='device'):
+    try:
+        return importlib.import_module('..'+TYPE_DICT[package_type]+'.'+className, __name__)
+    except Exception:
+        err = sys.exc_info()[1]
+        if bool(ModuleNotFoundError):
+            package = package_type+'-'+className
+            try:
+                install_output = install_package(package)
+                dev.log.new_log('Installed package '+package+': '
+                        +install_output.stdout.decode()
+                        +install_output.stderr.decode(),
+                        'INFO')
+                return importlib.import_module('..'+TYPE_DICT[package_type]+'.'+className, __name__)
+            except Exception:
+                err = sys.exc_info()[1]
+                dev.dev.log.new_log('Installing package'+package+' failed: '+str(err), 'WARNING')
+        else:
+            dev.dev.log.new_log('Initializing '+className+' failed: '+str(err), 'WARNING')
+
+def install_package(package):
+    package_type = package.split('-')[0]
+    urlstr = 'https://gitlab.com/api/v4/projects/19185895/packages/pypi/simple'
+    directory = str(pathlib.Path().absolute())+'/devisor/'+TYPE_DICT[package_type]+'/'
+    return subprocess.run([sys.executable, "-m", "pip", "install", package, '--index-url', urlstr, '-t', directory],
+            capture_output=True)

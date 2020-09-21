@@ -10,8 +10,9 @@ import datetime
 import socket
 import os
 import sys
+import requests
 
-from .devisorbase import DeviceBase
+from .devisorbase import DeviceBase,devisor_import
 from .connections import Connections
 
 def get_hostname():
@@ -39,12 +40,40 @@ def make_homie_name(rawName):
             name = 'only-special-chars'
     return name.lower()
 
+def list_local_device_packages(availableDevices):
+    devisorDevDir = './devisor/devices'
+    filenames = os.listdir(devisorDevDir)
+    for filename in filenames:
+        if (not (filename in ['__pycache__.py'] and
+                filename in availableDevices) and
+                os.path.isfile(os.path.join(devisorDevDir,filename,'__init__.py'))):
+            availableDevices.append(filename)
+    return availableDevices
+
+def list_remote_device_packages(availableDevices):
+    packages = []
+    page = 1
+    try:
+        while page > 0:
+            r = requests.get("https://gitlab.com/api/v4/projects/19185895/packages?per_page=100&page="+str(page))
+            if len(r.json()) > 0:
+                packages.extend(r.json())
+                page += 1
+            else:
+                page = -1
+    except:
+        print('No connection to package registry available.')
+        return availableDevices
+    for package in packages:
+        if (not (package['name'][7:] in availableDevices)
+                and package['name'][:6] == 'device'
+                and package['package_type'] == 'pypi'):
+            availableDevices.append(package['name'][7:])
+    return availableDevices
 
 availableDevices = []
-filenames = os.listdir('./devisor/devices')
-for filename in filenames:
-    if filename[-3:] == '.py' and not filename in ['__init__.py']:
-        availableDevices.append(filename[:-3])
+availableDevices = list_local_device_packages(availableDevices)
+availableDevices = list_remote_device_packages(availableDevices)
 
 
 initNodes = {}
@@ -72,9 +101,8 @@ def start_new_device(pB, topicFolder, address):
                 +address+'"')
     errorMsg = ''
     className = topicFolder.split('/')[0]
-    exec('from .devices.'+className+ ' import '+className)
-    pB.dev.runningDevices[topicFolder] = eval(className
-            + '(pB.dev, "' + topicFolder + '","' + address + '")')
+    driver = devisor_import(pB.devisor, className, 'device')
+    pB.dev.runningDevices[topicFolder] = driver.DeviceClass(pB.dev, topicFolder, address)
     pB.dev.log.new_log('Initialized device: ' + topicFolder, 'CRITICAL')
     if pB.param == 'devices/running':
         pB.value[topicFolder] = address
@@ -100,12 +128,12 @@ def handle_devicesRunning(pB):
                     raise Exception('Device "'+topicFolder+'" is disconnected or lost')
             except Exception:
                 err = sys.exc_info()[1]
-                pB.dev.log.new_log(topicFolder+"is listed to be removed due to: "+str(err))
+                pB.dev.log.new_log(topicFolder+" is listed to be removed due to: "+str(err))
                 devicesToDelete.append(topicFolder)
         else:
             start_new_device(pB, topicFolder, pB.value[topicFolder])
     for val in devicesToDelete[::-1]:
-        pB.dev.log.new_log(val+'is not running, so it will be removed.', 'CRITICAL')
+        pB.dev.log.new_log(val+' is not running, so it will be removed.', 'CRITICAL')
         del(pB.value[val])
     devicesToDelete = []
     for topicFolder in pB.dev.runningDevices:
