@@ -3,4 +3,4 @@ __pycache__
 *.swp
 devisor/connections
 devisor/devices
-devisor/utilitis
+devisor/utilities
