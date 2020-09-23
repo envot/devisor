@@ -11,7 +11,7 @@ COPY ./devisor /devisor/devisor/
 COPY ./start_devisor.py /devisor/start_devisor.py
 
 ENV PYTHONUNBUFFERED TRUE
-ENV HOST "host.docker.internal"
+ENV HOST 172.17.0.1
 ENV PORT 1883
 ENV NAME eot
 
