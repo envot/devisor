@@ -4,6 +4,7 @@
 # Python program to control, monitor and configure devices in an EoT: https://envot.io
 # Klemens Schueppert : schueppi@envot.io
 
+import datetime
 import time
 import random
 import math
@@ -73,6 +74,36 @@ sineWave['value'] = {
     'brokerInit' : False,
 }
 initNodes['sine-wave'] = sineWave
+
+initNodes['color'] = {
+    'test': {
+        'valueInit' : ['100','100','100'],
+        'datatype' : 'color',
+        'brokerInit' : True,
+        'format' : "rgb",
+        'settable' : True,
+        }
+    }
+
+def get_currtime(pB):
+    pB.dev.params['current-time/time'].value = datetime.datetime.now().isoformat()
+    pB.dev.params['current-time/time'].publish_value()
+    pB.value = False
+    pB.publish_value()
+
+curr_time = {}
+curr_time['get-time'] = {
+    'broker_func' : get_currtime,
+    'valueInit' : False,
+    'brokerInit' : True,
+    'settable' : True,
+    }
+curr_time['time'] = {
+    'valueInit' : 'Current Time',
+    'brokerInit' : True,
+    'datatype' : 'datetime',
+    }
+initNodes['current-time'] = curr_time
 
 
 class DeviceClass(DeviceBase):
