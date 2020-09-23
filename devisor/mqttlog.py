@@ -37,7 +37,7 @@ class MQTTLog():
             self.logArray.append(logMessageTimed)
             self.logArray = self.logArray[-self.length:]
             try:
-                self.dev.params['zlogging/logs'].device('\r\n'.join(self.logArray))
+                self.dev.params['logging/logs'].device('\r\n'.join(self.logArray))
             except:
                 pass
         

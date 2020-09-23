@@ -212,14 +212,7 @@ devices['stop'] = {
 }
 
 
-order = list(devices.keys())
-order.remove('running')
-order.remove('start/name')
-order.remove('stop/select')
-order.append('start/name')
-order.append('running')
-order.insert(0, 'stop/select')
-devices['order'] = order
+devices['order'] = ['stop', 'stop/select', 'start', 'start/type', 'start/name', 'start/address', 'running']
 initNodes['devices'] = devices
 
 

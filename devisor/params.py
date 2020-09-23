@@ -45,7 +45,7 @@ order = list(logging.keys())
 order.remove('logs')
 order.insert(0, 'logs')
 logging['order'] = order
-initLogging['zlogging'] = logging
+initLogging['logging'] = logging
 
 
 
