@@ -41,10 +41,7 @@ logging = {
         'format' : "DEBUG,INFO,WARNING,ERROR,CRITICAL",
         },
 }
-order = list(logging.keys())
-order.remove('logs')
-order.insert(0, 'logs')
-logging['order'] = order
+logging['order'] = ['logs', 'length', 'level']
 initLogging['logging'] = logging
 
 
