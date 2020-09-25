@@ -174,6 +174,7 @@ class DeviceBase():
     def create_node(self, node):
         if not node in self.params['$nodes'].value:
             self.params['$nodes'].value.append(node)
+            self.params['$nodes'].publish_value()
             for attr in initNodeAttributes:
                 self._init_param(node+'/'+attr, initNodeAttributes[attr])
 
@@ -190,6 +191,7 @@ class DeviceBase():
         param = node+'/$properties'
         if not name in self.params[param].value:
             self.params[param].value.append(name)
+            self.params[param].publish_value()
         self._init_param(node+'/'+name, initDict)
 
     def remove_property(self, name, node): 
