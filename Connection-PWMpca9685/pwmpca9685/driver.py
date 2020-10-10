@@ -24,7 +24,7 @@ class ConnectionClass():
         self.set_pwm_raw()
 
     def set_pwm_raw(self):
-        start = self._convert_value(phase)
+        start = self._convert_value(self.phase)
         end = start + self._convert_value(self.value)
         return self.con.set_pwm_raw(self.channel, start, end)
 
