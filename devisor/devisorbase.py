@@ -323,10 +323,13 @@ def devisor_import(dev, className, package_type='device'):
             package = package_type+'-'+className
             try:
                 install_output = install_package(package)
-                dev.log.new_log('Installed package '+package+': '
-                        +install_output.stdout.decode()
-                        +install_output.stderr.decode(),
-                        'INFO')
+                infostr = ('Installed package '+package+': '
+                            +install_output.stdout.decode()
+                            +install_output.stderr.decode())
+                try:
+                    dev.log.new_log(infostr, 'INFO')
+                except:
+                    print(infostr)
                 return importlib.import_module('..'+TYPE_DICT[package_type]+'.'+className, __name__)
             except Exception:
                 err = sys.exc_info()[1]
