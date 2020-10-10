@@ -10,12 +10,12 @@ DEVICE_FUNCTION_ARRAY = [[]] * (REGISTER_LENGTH+1)
 import smbus
 
 class ConnectionClass():
-    def __init__(self, devisor, addresses="1,0x20"):
+    def __init__(self, devisor, addresses="smbus,1,0x20"):
         self.devisor = devisor
         addressesArray = addresses.split(',')
-        self.i2cBusAddress = int(addressesArray[0])
-        self.i2cDeviceAddress = int(addressesArray[1], 16)
-        self.bus = smbus.SMBus(self.i2cBusAddress)
+        self.con = self.devisor.runningConnections.open(
+                ','.join(addressesArray[:-1]))
+        self.i2cDeviceAddress = int(addressesArray[-1], 16)
         self.registers = {}
         self.deviceFunctions= {}
         self.registerNames = {}
@@ -38,11 +38,11 @@ class ConnectionClass():
 
 
     def write(self, address, value):
-        self.bus.write_byte_data(self.i2cDeviceAddress, address, value)
+        self.con.bus.write_byte_data(self.i2cDeviceAddress, address, value)
         return True
 
     def read(self, address):
-        return self.bus.read_byte_data(self.i2cDeviceAddress, address)
+        return self.con.bus.read_byte_data(self.i2cDeviceAddress, address)
 
 
     def write_bit(self, address, bit, bitValue):
