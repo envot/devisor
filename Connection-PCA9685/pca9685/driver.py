@@ -6,8 +6,9 @@
 
 import time 
 
-from ..i2cbus.driver import DEVICE_FUNCTION_ARRAY
-from ..i2cbus.driver import ConnectionClass as i2cbus
+from ...devisorbase import devisor_import
+
+i2cbus = devisor_import('dev', 'i2cbus', 'connection')
 
 PCA_DICT = {
         'MODE1' : 0x00,
@@ -31,7 +32,7 @@ BITS = {
 CHANNELS = list(range(16))
 
 
-class ConnectionClass(i2cbus):
+class ConnectionClass(i2cbus.ConnectionClass):
     def init_pre(self):
         self.channels = CHANNELS
         self.bits = BITS
@@ -44,7 +45,7 @@ class ConnectionClass(i2cbus):
             for i,strEnd in enumerate(['_ON_L','_ON_H','_OFF_L','_OFF_H']):
                 address = 0x06+4*channel+i
                 self.registerNames['LED'+str(channel)+strEnd]=address
-                self.deviceFunctions[address] = DEVICE_FUNCTION_ARRAY.copy()
+                self.deviceFunctions[address] = i2cbus.DEVICE_FUNCTION_ARRAY.copy()
                 self.registers[address] = 0
                 self.read_register(address)
                 time.sleep(0.01)
