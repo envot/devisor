@@ -24,7 +24,7 @@ HOMIE_SET = "/set"
 
 TYPE_DICT = {
         'device': 'devices',
-        'connection': 'connectoins',
+        'connection': 'connections',
         'utility': 'utilities',
         }
 
@@ -336,7 +336,7 @@ def devisor_import(dev, className, package_type='device'):
 
 def install_package(package):
     package_type = package.split('-')[0]
-    urlstr = 'https://gitlab.com/api/v4/projects/19185895/packages/pypi/simple'
+    urlstr = 'https://gitlab.com/api/v4/projects/19185895/packages/pypi/simple/'
     directory = str(pathlib.Path().absolute())+'/devisor/'+TYPE_DICT[package_type]+'/'
-    return subprocess.run([sys.executable, "-m", "pip", "install", package, '--index-url', urlstr, '-t', directory],
+    return subprocess.run([sys.executable, "-m", "pip", "install", package, '--no-index', '--find-links', urlstr+package, '-t', directory],
             capture_output=True)

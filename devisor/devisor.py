@@ -102,8 +102,16 @@ def start_new_device(pB, topicFolder, address):
     errorMsg = ''
     className = topicFolder.split('/')[0]
     driver = devisor_import(pB.devisor, className, 'device')
-    pB.dev.runningDevices[topicFolder] = driver.DeviceClass(pB.dev, topicFolder, address)
-    pB.dev.log.new_log('Initialized device: ' + topicFolder, 'CRITICAL')
+    try:
+        pB.dev.runningDevices[topicFolder] = driver.DeviceClass(pB.dev,
+                topicFolder, address)
+        pB.dev.log.new_log('Initialized device: '
+                +topicFolder, 'CRITICAL')
+    except Exception:
+        err = sys.exc_info()[1]
+        pB.dev.log.new_log('Initializing '+topicFolder
+                +' failed: '+str(err), 'WARNING')
+
     if pB.param == 'devices/running':
         pB.value[topicFolder] = address
         pB.publish_value()
