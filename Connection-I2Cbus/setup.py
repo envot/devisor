@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="connection-i2cbus",
-    version="0.0.2",
+    version="0.1.0",
     author="schueppi",
     author_email="schueppi@schueppi.com",
     description="A class to providing a i2cbus connection.",

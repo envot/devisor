@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="device-computerstats",
-    version="0.0.3",
+    version="0.1.0",
     author="Example Author",
     author_email="author@example.com",
     description="A device reading some stats of your computer",

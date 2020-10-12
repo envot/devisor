@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="utility-qfpscan",
-    version="0.0.1",
+    version="0.1.0",
     author="schueppi",
     author_email="schueppi@schueppi.com",
     description="A class to manage data recording in the QFP style.",

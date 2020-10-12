@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="device-nextbike",
-    version="0.0.1",
+    version="0.1.0",
     author="schueppi",
     author_email="schueppi@schueppi.com",
     description="A device to collect station info from nextbike.",

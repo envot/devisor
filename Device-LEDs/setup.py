@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="device-leds",
-    version="0.0.2",
+    version="0.1.0",
     author="Klemens Schueppert",
     author_email="schueppi@envot.io",
     description="A device handling multiple led connections.",
