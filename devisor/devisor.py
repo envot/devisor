@@ -96,7 +96,7 @@ def stop_device(pB, topicFolder):
     pB.dev.params['devices/stop/select/$format'].publish_value()
 
 def start_new_device(pB, topicFolder, address):
-    pB.dev.log.new_log('Try to load device "'
+    pB.new_log('Loading device "'
                 +topicFolder+'" at "'
                 +address+'"')
     errorMsg = ''
@@ -105,11 +105,11 @@ def start_new_device(pB, topicFolder, address):
     try:
         pB.dev.runningDevices[topicFolder] = driver.DeviceClass(pB.dev,
                 topicFolder, address)
-        pB.dev.log.new_log('Initialized device: '
+        pB.new_log('Initialized device: '
                 +topicFolder, 'CRITICAL')
     except Exception:
         err = sys.exc_info()[1]
-        pB.dev.log.new_log('Initializing '+topicFolder
+        pB.new_log('Initializing '+topicFolder
                 +' failed: '+str(err), 'WARNING')
 
     if pB.param == 'devices/running':
@@ -136,19 +136,19 @@ def handle_devicesRunning(pB):
                     raise Exception('Device "'+topicFolder+'" is disconnected or lost')
             except Exception:
                 err = sys.exc_info()[1]
-                pB.dev.log.new_log(topicFolder+" is listed to be removed due to: "+str(err))
+                pB.new_log(topicFolder+" is listed to be removed due to: "+str(err))
                 devicesToDelete.append(topicFolder)
         else:
             start_new_device(pB, topicFolder, pB.value[topicFolder])
     for val in devicesToDelete[::-1]:
-        pB.dev.log.new_log(val+' is not running, so it will be removed.', 'CRITICAL')
+        pB.new_log(val+' is not running, so it will be removed.', 'CRITICAL')
         del(pB.value[val])
     devicesToDelete = []
     for topicFolder in pB.dev.runningDevices:
         if not topicFolder in pB.value:
             devicesToDelete.append(topicFolder)
     for topicFolder in devicesToDelete[::-1]:
-        pB.dev.log.new_log('We close '+topicFolder+'.')
+        pB.new_log('We close '+topicFolder+'.')
         pB.dev.runningDevices[topicFolder].exit()
         del(pB.dev.runningDevices[topicFolder])
     pB.dev.params['devices/stop/select/$format'].value = list(
@@ -187,12 +187,11 @@ def handle_deviceStartSwitch(pB):
     topicFolder = '/'.join([pB.dev.params['devices/start/type'].value,
                             pB.dev.params['devices/start/name'].value])
     if topicFolder in pB.dev.runningDevices:
-        pB.dev.log.new_log('Device "'+
+        pB.new_log('Device "'+
                 topicFolder+'" is already running.')
     else:
         start_new_device(pB, topicFolder, pB.dev.params['devices/start/address'].value)
     pB.value = False
-    pB.publish_value()
 
 devices['start'] = {
     'valueInit' : False,
@@ -205,13 +204,12 @@ def handle_deviceStopSwitch(pB):
     topicFolder = pB.dev.params['devices/stop/select'].value
     if topicFolder in pB.dev.runningDevices:
         stop_device(pB, topicFolder)
-        pB.dev.log.new_log('Device "'+
+        pB.new_log('Device "'+
                 topicFolder+'" stopped.', 'CRITICAL')
     else:
-        pB.dev.log.new_log('Device "'+
+        pB.new_log('Device "'+
                 topicFolder+'" is not running.')
     pB.value = False
-    pB.publish_value()
 
 devices['stop'] = {
     'valueInit' : False,
@@ -243,11 +241,10 @@ control['reboot'] = {
 def refresh_devisor(pB):
     pB.valueOld = pB.value
     pB.value = False
-    pB.publish_value()
     if pB.valueOld:
-        pB.dev.log.new_log('Refreshing values ...')
+        pB.new_log('Refreshing values ...')
         pB.dev.publish_all_devices(attributes=False)
-        pB.dev.log.new_log('...Refreshed')
+        pB.new_log('...Refreshed')
 
 control['refresh'] = {
     'valueInit' : False,
@@ -259,10 +256,9 @@ control['refresh'] = {
 def upgrade_devisor(pB):
     pB.valueOld = pB.value
     if pB.valueOld:
-        pB.dev.log.new_log('Pulling git...')
-        pB.dev.log.new_log(os.popen('git pull').read())
+        pB.new_log('Pulling git...')
+        pB.new_log(os.popen('git pull').read())
     pB.value = False
-    pB.publish_value()
 
 control['upgrade'] = {
     'valueInit' : False,

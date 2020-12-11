@@ -6,6 +6,7 @@
 
 import json
 import time
+import traceback
 
 import _thread
 
@@ -48,8 +49,7 @@ class ParameterProcessor():
         self.payloadOld = self.convert_value()
 
         if 'variables' in initDict:
-            for var in initDict['variables']:
-                exec('self.'+var+ ' = "' + str(initDict['variables'][var])+'"')
+            self.variables = initDict['variables']
 
         if 'device_func' in initDict:
             self.device_func = initDict['device_func']
@@ -74,6 +74,7 @@ class ParameterProcessor():
         self.valueOld = self.value
         self.value = newValue 
         self.broker_func(self)
+        self.publish_value()
 
     def broker_func(self, dummy):
         pass
@@ -83,12 +84,20 @@ class ParameterProcessor():
         self.valueOld = self.value
         self.value = value
         self.device_func(self)
+        self.publish_value()
 
     def device_func(self, dummy):
-        self.publish_value()
+        pass
 
 
     def convert_payload(self):
+        try:
+            return self._convert_payload()
+        except:
+            self.new_log(traceback.format_exc(), 'CRITICAL')
+            return self.valueInit
+
+    def _convert_payload(self):
         return self.type(self.payload)
 
     def convert_value(self):
@@ -102,10 +111,13 @@ class ParameterProcessor():
     def close(self):
         self.dev.remove_topic(self.param)
 
+    def new_log(self, logStr, level='DEBUG'):
+        self.dev.log.new_log(self.param+': '+logStr, level)
+
 
 
 class ParameterProcessor_bool(ParameterProcessor):
-    def convert_payload(self):
+    def _convert_payload(self):
         if self.payload == BROKER_TRUE:
             return True
         if self.payload == BROKER_FALSE:
@@ -119,7 +131,7 @@ class ParameterProcessor_bool(ParameterProcessor):
 
 
 class ParameterProcessor_int(ParameterProcessor):
-    def convert_payload(self):
+    def _convert_payload(self):
         return int(float(self.payload))
 
     def convert_value(self):
@@ -127,7 +139,7 @@ class ParameterProcessor_int(ParameterProcessor):
 
 
 class ParameterProcessor_float(ParameterProcessor):
-    def convert_payload(self):
+    def _convert_payload(self):
         return float(self.payload)
 
     def convert_value(self):
@@ -135,7 +147,7 @@ class ParameterProcessor_float(ParameterProcessor):
 
 
 class ParameterProcessor_list(ParameterProcessor):
-    def convert_payload(self):
+    def _convert_payload(self):
         return self.payload.split(LIST_SEPARATOR)
     
     def convert_value(self):
@@ -143,7 +155,7 @@ class ParameterProcessor_list(ParameterProcessor):
 
 
 class ParameterProcessor_dict(ParameterProcessor):
-    def convert_payload(self):
+    def _convert_payload(self):
         return json.loads(self.payload)
     
     def convert_value(self):

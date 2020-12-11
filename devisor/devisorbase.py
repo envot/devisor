@@ -31,9 +31,7 @@ TYPE_DICT = {
 def keep_private_parameter(pB):
     if pB.value != pB.valueOld:
         pB.value = pB.valueOld
-        pB.publish_value()
-        pB.dev.log.new_log("Somebody tried to change "
-                +str(pB.param))
+        pB.new_log("Somebody tried to change it.")
 
 
 class DeviceBase():
@@ -318,6 +316,8 @@ def devisor_import(dev, className, package_type='device'):
     try:
         return importlib.import_module('..'+TYPE_DICT[package_type]+'.'+className, __name__)
     except Exception:
+        if not dev ==None:
+            dev.log.new_log('Could locally not import '+TYPE_DICT[package_type]+'.'+className+' .', 'WARNING')
         err = sys.exc_info()[1]
         if bool(ModuleNotFoundError):
             package = package_type+'-'+className
@@ -326,16 +326,17 @@ def devisor_import(dev, className, package_type='device'):
                 infostr = ('Installed package '+package+': '
                             +install_output.stdout.decode()
                             +install_output.stderr.decode())
-                try:
-                    dev.log.new_log(infostr, 'INFO')
-                except:
-                    print(infostr)
                 return importlib.import_module('..'+TYPE_DICT[package_type]+'.'+className, __name__)
             except Exception:
                 err = sys.exc_info()[1]
-                dev.dev.log.new_log('Installing package'+package+' failed: '+str(err), 'WARNING')
+                logStr = 'Installing package'+package+' failed: '+str(err)
         else:
-            dev.dev.log.new_log('Initializing '+className+' failed: '+str(err), 'WARNING')
+            if not dev ==None:
+                logStr = 'Initializing '+className+' failed: '+str(err)
+        if not dev ==None:
+            dev.log.new_log(logStr, 'WARNING')
+        else:
+            print(logStr)
 
 def install_package(package):
     package_type = package.split('-')[0]
