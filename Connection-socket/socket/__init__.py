@@ -8,15 +8,15 @@ import sys
 
 
 class ConnectionClass():
-    def __init__(self, devisor, address='device.lan,5555'):
+    def __init__(self, devisor, address='device.lan:5555'):
         self.devisor = devisor 
         self.address = address
-        addressArray = address.split(',')
+        addressArray = address.split(':')
         self.hostname = 'device.lan'
         self.port = 5555
         self.TIMEOUT = 0.1 
         self.EOL = '\n'
-        if len(addressArray)>0:
+        if not addressArray[0]=='':
             self.hostname = addressArray[0]
         if len(addressArray)==2:
             self.port = int(addressArray[1])
