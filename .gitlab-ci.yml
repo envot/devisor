@@ -1,5 +1,5 @@
 docker-build-master:
-  image: python:3.8.6-slim-buster
+  image: python:latest
   stage: build
   script:
     - pip install twine

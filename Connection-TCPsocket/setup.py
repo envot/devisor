@@ -1,11 +1,11 @@
 import setuptools
 
 setuptools.setup(
-    name="connection-socket",
-    version="0.1.1",
+    name="connection-tcpsocket",
+    version="0.1.0",
     author="schueppi",
     author_email="schueppi@schueppi.com",
-    description="A class to providing a socket connection.",
+    description="A class to providing a TCP socket connection.",
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",

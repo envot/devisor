@@ -38,16 +38,16 @@ class ConnectionClass():
             err = sys.exc_info()[1]
             self.failure += 1
             if self.failure < 2:
-                self.devisor.log.new_log('Connection "socket" failed to ask for "'
+                self.devisor.log.new_log('Connection "TCP socket" failed to ask for "'
                     +value+'":'+str(err), "WARNING")
                 data = self.ask(value)
             elif self.failure < 3:
-                self.devisor.log.new_log('Connection "socket" failed again to ask for "'
-                    +value+'":'+str(err)+"... now reconnect socket.", "WARNING")
+                self.devisor.log.new_log('Connection "TCP socket" failed again to ask for "'
+                    +value+'":'+str(err)+"... now reconnect TCP socket.", "WARNING")
                 self.reconnect()
                 data = self.ask(value)
             else:
-                self.devisor.log.new_log('Connection "socket" failed after reconnect to ask for "'
+                self.devisor.log.new_log('Connection "TCP socket" failed after reconnect to ask for "'
                     +value+'":'+str(err)+"... return empty String.", "ERROR")
             return data 
 
