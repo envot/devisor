@@ -5,7 +5,7 @@ setuptools.setup(
     version="0.1.0",
     author="schueppi",
     author_email="schueppi@schueppi.com",
-    description="A device to handle digital outpus with trigger timers.",
+    description="A device to handle digital outpus with optional trigger timers.",
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
