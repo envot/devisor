@@ -10,9 +10,6 @@ from devisor.devisorbase import devisor_import
 
 scpiPackage = devisor_import(None, 'scpi', 'device')
 
-scpiPackage.SCPI_CMD_FOLDER
-initNodes = scpiPackage.initNodes.copy()
-
 scpiDict = {
     'coupling<a>:ampl:deviation' : {
         'valueInit' : 0.,
