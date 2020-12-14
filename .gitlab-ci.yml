@@ -1,5 +1,5 @@
 docker-build-master:
-  image: python:latest
+  image: python:3.8.6-alpine3.12
   stage: build
   script:
     - pip install twine
