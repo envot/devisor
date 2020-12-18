@@ -85,7 +85,7 @@ scpiDict = {
     },
     'source<a>:voltage:level' : {
         'valueInit' : 2e-3,
-        'format' : '2e-3:0.1',
+        'format' : '1e-3:0.15',
         'unit' : "Vpp",
     },
     'source<a>:voltage:offset' : {
