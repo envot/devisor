@@ -23,8 +23,16 @@ class ConnectionClass():
         self.open()
         self.failure = 0
 
-    def write(self, value):
+    def write(self, value, encode=True):
         return self.instr.send(value.encode())
+
+    def read(self, length=1024, codec=True):
+        if type(codec)==str:
+            return self.instr.recv(length).decode(codec)
+        elif codec:
+            return self.instr.recv(length).decode()
+        else:
+            return self.instr.recv(length)
 
     def ask(self, value):
         self.write(value)

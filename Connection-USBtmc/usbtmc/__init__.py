@@ -30,6 +30,14 @@ class ConnectionClass():
             self.instr = usbtmc.Instrument(self.vendor,self.product)
             self.serial = None
 
+    def read(self, length=1024, codec=True):
+        if type(codec)==str:
+            return self.instr.read(length).decode(codec)
+        elif codec:
+            return self.instr.read(length)
+        else:
+            return self.instr.read_raw(length)
+
     def write(self, value):
         return self.instr.write(value)
 

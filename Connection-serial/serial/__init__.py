@@ -19,6 +19,15 @@ class ConnectionClass():
     def write(self, value):
         return self.instr.write((value+self.EOL).encode(self.codec))
 
+    def read(self, length=1024, codec=True):
+        if type(codec)==str:
+            return self.instr.recv(length).decode(codec)
+        elif codec:
+            return self.instr.recv(length).decode(self.codec)
+        else:
+            return self.instr.recv(length)
+
+
     def ask(self, value):
         self.write(value)
         data = ''
