@@ -10,6 +10,11 @@ from devisor.devisorbase import devisor_import
 
 scpiPackage = devisor_import(None, 'scpi', 'device')
 
+CAL_NODE = 'scpi'
+CAL_PROP = 'PA'
+CAL_PARAM = CAL_NODE+'/'+CAL_PROP
+CAL_STR = '-cal'
+
 scpiDict = {
     'AC' : {
         'valueInit' : 0.,
@@ -122,13 +127,59 @@ scpiDict = {
     },
 }
 
+
+calibration = {}
+
+calibration['offset'] = {
+    'valueInit' : 0.,
+    'settable' : True,
+    'brokerInit' : True,
+}
+calibration['slope'] = {
+    'valueInit' : 10.,
+    'settable' : True,
+    'brokerInit' : True,
+}
+calibration['hysteresis'] = {
+    'valueInit' : 0.,
+    'settable' : True,
+    'brokerInit' : True,
+}
+
+calibration['order'] = ['offset','slope','hysteresis']
+
+
+def set_position(pB):
+    slope = pB.dev.params['calibration/slope'].value
+    offset = pB.dev.params['calibration/offset'].value
+    newInt = slope * pB.value + offset
+    # TODO: hysteresis  with oldValue?
+    pB.dev.params[CAL_PARAM].broker(newInt)
+def calc_position(pB):
+    slope = pB.dev.params['calibration/slope'].value
+    offset = pB.dev.params['calibration/offset'].value
+    pB.value = (pB.value - offset ) / slope
+initDictCal = {
+    'valueInit' : 0.,
+    'brokerInit' : False,
+    'broker_func' : set_position,
+    'device_func' : calc_position,
+    'settable' : True,
+}
+
 class DeviceClass(scpiPackage.DeviceClass):
     def init_scpi_pre(self):
         self.devisor.runningConnections.opened[','.join(self.address.split(',')[1:])].instr.baudrate = 19200
         self.preSymbol = self.address.split(',')[-1]
         del(self.initNodes['config']['idn'])
         self.initNodes['config']['order'].remove('idn')
+        self.initNodes['calibration'] = calibration.copy()
         self.scpiDict = scpiDict.copy()
+
+    def init_scpi_after(self):
+        self.create_property(CAL_PROP+CAL_STR, CAL_NODE, initDictCal)
+        self.params[CAL_PARAM].triggerParams.append(CAL_PARAM+CAL_STR)
+        pass
 
 
     def scpi_read(self, pB):

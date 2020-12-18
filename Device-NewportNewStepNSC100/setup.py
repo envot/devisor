@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="device-newportnewstepnsc100",
-    version="0.1.0",
+    version="0.1.1",
     author="schueppi",
     author_email="schueppi@schueppi.com",
     description="A device to handle Newport NewStep NSC 100 controller.",
