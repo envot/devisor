@@ -10,6 +10,7 @@ class ConnectionClass():
         self.devisor = devisor 
         self.address = address
         self.con = self.devisor.runningConnections.open(address)
+        self.read_empty()
         self.block = False
 
     def write(self, value, encode=True):
@@ -53,4 +54,3 @@ class ConnectionClass():
         while self.block:
             time.sleep(0.01)
         self.block = True
-
