@@ -9,6 +9,7 @@ import time
 from devisor.devisorbase import devisor_import
 
 scpiPackage = devisor_import(None, 'scpi', 'device')
+qfpscan = devisor_import(None, 'qfpscan', 'utility')
 
 scpiDict = {
     'horizontal:main:position' : {
@@ -98,8 +99,63 @@ scpiDict = {
     },
 }
 
+waveform = {}
+def waveform_acquire(pB):
+    pB.dev.waveform_acquire()
+    pB.value = False
+waveform['acquire'] = {
+        'valueInit' : False,
+        'settable' : True,
+        'broker_func' : waveform_acquire
+}
+waveform['channels'] = {
+        'valueInit' : ['CH1'],
+        'brokerInit' : True,
+        'settable' : True,
+}
+
 class DeviceClass(scpiPackage.DeviceClass):
     def init_scpi_pre(self):
         self.scpiDict = scpiDict.copy()
         self.measures = 5
         self.analogs = 4
+        self.initNodes['waveform'] = waveform
+
+    def waveform_acquire(self):
+        #self.instr.write('data:encdg RIBinary')
+        self.instr.write('acquire:state off')
+        self.instr.write('data:encdg ASCII')
+        self.instr.write('data:width 1')
+        self.instr.write('data:start 1')
+        self.instr.write('data:stop 2500')
+        datadicts = []
+        wfmpre = self.instr.ask('wfmpre?').split(';')
+        predata  = list(range(0,2500))
+        data = [x * float(wfmpre[8])*1e3 - float(wfmpre[9]) - float(wfmpre[10]) for x in predata]
+        datadicts.append({
+            'data' : data,
+            'name' : 'Time',
+            'unit' : 'ms',
+            'unitlong' : 'milliseconds',
+            'symbol' : 't',})
+        for channel in self.params['waveform/channels'].value:
+            self.instr.write('data:source '+channel)
+            wfmpre = self.instr.ask('wfmpre?').split(';')
+            datastr = self.instr.ask('curve?')
+            predata = datastr.split(',')
+            data = [float(x) * float(wfmpre[12])*1e3 - float(wfmpre[13]) - float(wfmpre[14]) for x in predata]
+            datadicts.append({
+                'data' : data,
+                'name' : channel,
+                'unit' : 'm'+wfmpre[-1][1],
+                'unitlong' : 'milli'+wfmpre[-1][1:-1],
+                'symbol' : 'U',})
+        self.instr.write('acquire:state on')
+        newscan = qfpscan.Scan(datadicts, '/mnt/qos/cryotrap/data/')
+        newscan.settings = {
+                'Osci.Name': self.name,
+                'Waveform.Preamble': wfmpre
+                }
+        newscan.createFolder()
+        newscan.save()
+

@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="device-tektronixds2004c",
-    version="0.1.0",
+    version="0.1.1",
     author="schueppi",
     author_email="schueppi@schueppi.com",
     description="A device to handle Tektronix DS2004C oscilloscope.",
