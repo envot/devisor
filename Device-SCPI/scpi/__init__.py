@@ -32,12 +32,14 @@ control['command/raw'] = {
 }
 
 def control_change_read_interval(pB):
-    if pB.dev.ReadOutThread.isAlive():
-        pB.dev.ReadOutThread.cancel()
-    pB.dev.device_thread()
+    if pB.dev.up:
+        if pB.dev.ReadOutThread.isAlive():
+            pB.dev.ReadOutThread.cancel()
+        pB.dev.device_thread()
 control['read/interval'] = {
-    'valueInit' : 5.,
+    'valueInit' : 10.,
     'brokerInit' : True,
+    'broker_func' : control_change_read_interval,
     'format' : "0.5:1000000",
     'settable' : True,
     'unit': 's',
