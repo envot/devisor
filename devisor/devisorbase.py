@@ -36,6 +36,7 @@ def keep_private_parameter(pB):
 
 class DeviceBase():
     def __init__(self, devisor, topicFolder, address=False):
+        self.up = False
         self.devisor = devisor
         self.dev = self
         self.address = address
