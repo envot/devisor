@@ -45,6 +45,7 @@ class ParameterProcessor():
         self.value = self.valueInit
         self.type = type(initDict['valueInit'])
         self.valueOld = self.value
+        self.triggerParams = []
         self.payload = self.convert_value()
         self.payloadOld = self.convert_value()
 
@@ -74,7 +75,7 @@ class ParameterProcessor():
         self.valueOld = self.value
         self.value = newValue 
         self.broker_func(self)
-        self.publish_value()
+        self.trigger_value_change()
 
     def broker_func(self, dummy):
         pass
@@ -84,7 +85,7 @@ class ParameterProcessor():
         self.valueOld = self.value
         self.value = value
         self.device_func(self)
-        self.publish_value()
+        self.trigger_value_change()
 
     def device_func(self, dummy):
         pass
@@ -113,6 +114,11 @@ class ParameterProcessor():
 
     def new_log(self, logStr, level='DEBUG'):
         self.dev.log.new_log(self.param+': '+logStr, level)
+
+    def trigger_value_change(self):
+        self.publish_value()
+        for triggerParam in self.triggerParams:
+            self.dev.params[triggerParam].device(self.value)
 
 
 
