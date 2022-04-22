@@ -1,12 +1,47 @@
-docker-build-master:
-  image: docker:latest
+image: docker:latest
+
+stages:
+  - build
+  - push
+
+services:
+  - docker:19.03.12-dind
+
+Build:
   stage: build
-  services:
-    - docker:dind
-  before_script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   script:
-    - docker build --pull -t "$CI_REGISTRY_IMAGE" .
-    - docker push "$CI_REGISTRY_IMAGE"
+    - docker pull $CI_REGISTRY_IMAGE:latest || true
+    - docker build --cache-from $CI_REGISTRY_IMAGE:latest --tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
+    - echo -n $CI_REGISTRY_PASSWORD | docker login -u "$CI_REGISTRY_USER" --password-stdin $CI_REGISTRY
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_PROJECT_PATH:$CI_COMMIT_SHA
+    - echo $DOCKER_HUB_USER
+    - echo -n $DOCKER_HUB_TOKEN | docker login --password-stdin --username "$DOCKER_HUB_USER"
+    - docker push $CI_PROJECT_PATH:$CI_COMMIT_SHA
+
+
+Push latest:
+  stage: push
   only:
     - master
+  script:
+    - docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - echo -n $CI_REGISTRY_PASSWORD | docker login -u "$CI_REGISTRY_USER" --password-stdin $CI_REGISTRY
+    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:latest
+    - docker push $CI_REGISTRY_IMAGE:latest
+    - echo -n $DOCKER_HUB_TOKEN | docker login --password-stdin --username "$DOCKER_HUB_USER"
+    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_PROJECT_PATH:latest
+    - docker push $CI_PROJECT_PATH:latest
+
+Push tag:
+  stage: push
+  only:
+    - tags
+  script:
+    - docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - echo -n $CI_REGISTRY_PASSWORD | docker login -u "$CI_REGISTRY_USER" --password-stdin $CI_REGISTRY
+    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
+    - echo -n $DOCKER_HUB_TOKEN | docker login --password-stdin --username "$DOCKER_HUB_USER"
+    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_PROJECT_PATH:$CI_COMMIT_REF_NAME
+    - docker push $CI_PROJECT_PATH:$CI_COMMIT_REF_NAME
