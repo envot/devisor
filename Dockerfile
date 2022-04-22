@@ -1,4 +1,4 @@
-FROM python:3.7.7-alpine3.11
+FROM python:3.9.12-alpine3.15
 
 MAINTAINER Klemens Schueppert "schueppi@envot.io"
 
@@ -11,7 +11,7 @@ COPY ./devisor /devisor/devisor/
 COPY ./start_devisor.py /devisor/start_devisor.py
 
 ENV PYTHONUNBUFFERED TRUE
-ENV HOST 172.17.0.1
+ENV HOST broker
 ENV PORT 1883
 ENV NAME eot
 

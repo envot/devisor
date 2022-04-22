@@ -154,7 +154,7 @@ class DeviceBase():
                 self.log.new_log("Connected to broker: "+str(self.devisor.host)+":"
                     +str(self.devisor.port))
         else:
-            print(self.log.logMessage)
+            print(self.log.logArray)
             print("Connection failed")
 
     def on_message(self, client, userdata, message):
