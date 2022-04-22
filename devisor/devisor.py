@@ -272,6 +272,7 @@ initNodes['control'] = control
 
 class DeVisor(DeviceBase):
     def __init__(self, host, port, name=None):
+        self.up = False
         self.host = host
         self.port = port
         self.ip,ipname = get_hostname()
