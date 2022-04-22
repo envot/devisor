@@ -271,15 +271,13 @@ initNodes['control'] = control
 
 
 class DeVisor(DeviceBase):
-    def __init__(self, host, port, name=None):
+    def __init__(self, host, port, name=None, ip='IP'):
         self.up = False
         self.host = host
         self.port = port
-        self.ip,ipname = get_hostname()
+        self.ip = ip
         self.address = self.ip
-        if name == None:
-            name = ipname
-        self.name = make_homie_name(name)
+        self.name = name
         self.devisor = self
         self.dev = self
         self.topicFolder = ("devisor/"+self.name)

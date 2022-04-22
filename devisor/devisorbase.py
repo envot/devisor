@@ -35,12 +35,20 @@ def keep_private_parameter(pB):
 
 
 class DeviceBase():
-    def __init__(self, devisor, topicFolder, address=False):
+    def __init__(self, devisor, topicFolder, address=False,
+            ip='IP', host='MQTT-HOST', port=1883):
         self.up = False
         self.devisor = devisor
+        if self.devisor == None:
+            self.ip = ip
+            self.host = host
+            self.port = port
+        else:
+            self.host = self.devisor.host
+            self.port = self.devisor.port
+            self.ip = self.devisor.ip
         self.dev = self
         self.address = address
-        self.ip = self.devisor.ip
         self.topicFolder = topicFolder
         self.name = topicFolder
         self.subscribed = []
@@ -49,6 +57,7 @@ class DeviceBase():
         self.init_pre()
         self.init_standards()
         self.init_after()
+        self.RUN = True
 
     def init_basics(self):
         self.log = MQTTLog(self)
@@ -143,16 +152,16 @@ class DeviceBase():
     def on_connect(self, client, userdata, flags, rc):
         if rc == 0:
             if self.up:
-                self.log.new_log("Reconnected to broker: "+str(self.devisor.host)+":"
-                    +str(self.devisor.port))
+                self.log.new_log("Reconnected to broker: "+str(self.host)+":"
+                    +str(self.port))
                 self.params['$state'].device('ready')
                 for topic in self.subscribed:
                     self.subscribe_topic(topic)
                 self.publish_all()
                 self.log.new_log("Resubscribed and refreshed all topics.")
             else:
-                self.log.new_log("Connected to broker: "+str(self.devisor.host)+":"
-                    +str(self.devisor.port))
+                self.log.new_log("Connected to broker: "+str(self.host)+":"
+                    +str(self.port))
         else:
             print(self.log.logArray)
             print("Connection failed")
@@ -212,10 +221,8 @@ class DeviceBase():
         self.client.on_message = self.on_message
         self.client.will_set(self.topicFolder+"/$state",
                 'lost', qos=0, retain=True)
-        self.client.connect(self.devisor.host, self.devisor.port)
-        self.log.new_log("Connected: "
-                +self.devisor.host
-                +":"+str(self.devisor.port))
+        self.client.connect(self.host, self.port)
+        self.log.new_log("Connected: "+self.host+":"+str(self.port))
         self.client.loop_start()
 
     def _get_persistent(self):
@@ -317,7 +324,9 @@ def devisor_import(dev, className, package_type='device'):
     try:
         return importlib.import_module('..'+TYPE_DICT[package_type]+'.'+className, __name__)
     except Exception:
-        if not dev ==None:
+        if dev == None:
+            print('WARNING: Could locally not import '+TYPE_DICT[package_type]+'.'+className+' .')
+        else:
             dev.log.new_log('Could locally not import '+TYPE_DICT[package_type]+'.'+className+' .', 'WARNING')
         err = sys.exc_info()[1]
         if bool(ModuleNotFoundError):
@@ -332,12 +341,11 @@ def devisor_import(dev, className, package_type='device'):
                 err = sys.exc_info()[1]
                 logStr = 'Installing package'+package+' failed: '+str(err)
         else:
-            if not dev ==None:
-                logStr = 'Initializing '+className+' failed: '+str(err)
-        if not dev ==None:
+            logStr = 'Initializing '+className+' failed: '+str(err)
+        if not dev == None:
             dev.log.new_log(logStr, 'WARNING')
         else:
-            print(logStr)
+            print('WARNING: '+logStr)
 
 def install_package(package):
     package_type = package.split('-')[0]

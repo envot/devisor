@@ -4,4 +4,3 @@
 # Python program to control, monitor and configure devices in an EoT: https://envot.io
 # Klemens Schueppert : schueppi@envot.io
 
-from .devisor import DeVisor
