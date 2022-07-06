@@ -39,14 +39,9 @@ class DeviceBase():
             ip='IP', host='MQTT-HOST', port=1883):
         self.up = False
         self.devisor = devisor
-        if self.devisor == None:
-            self.ip = ip
-            self.host = host
-            self.port = port
-        else:
-            self.host = self.devisor.host
-            self.port = self.devisor.port
-            self.ip = self.devisor.ip
+        self.host = self.devisor.host
+        self.port = self.devisor.port
+        self.ip = self.devisor.ip
         self.dev = self
         self.address = address
         self.topicFolder = topicFolder
@@ -76,6 +71,11 @@ class DeviceBase():
         self.params = {}
         self._init_device_attributes()
         self.log.init_mqtt()
+        try:
+            self.devisor.log.length
+        except:
+            self.devisor.log = self.log
+            self.devisor.log.new_log('No Devisor active. All logs via device log.', 'INFO')
 
     def init_pre(self):
         pass
@@ -164,7 +164,7 @@ class DeviceBase():
                     +str(self.port))
         else:
             print(self.log.logArray)
-            print("Connection failed")
+            print("Connection to broker failed.")
 
     def on_message(self, client, userdata, message):
         topicFolder = self._topic_folder(message.topic)
@@ -261,7 +261,10 @@ class DeviceBase():
     
 
     def _init_param_attributes(self, param, initDict):
-        self._init_param_attribute(param+'/$name', param)
+        fname = param
+        if 'name' in initDict:
+            fname = initDict['name']
+        self._init_param_attribute(param+'/$name', fname)
         if 'datatype' in initDict:
             self._init_param_attribute(param+'/$datatype', initDict['datatype'])
         else:
@@ -324,10 +327,11 @@ def devisor_import(dev, className, package_type='device'):
     try:
         return importlib.import_module('..'+TYPE_DICT[package_type]+'.'+className, __name__)
     except Exception:
-        if dev == None:
-            print('WARNING: Could locally not import '+TYPE_DICT[package_type]+'.'+className+' .')
-        else:
-            dev.log.new_log('Could locally not import '+TYPE_DICT[package_type]+'.'+className+' .', 'WARNING')
+        err_msg = 'Could not import '+TYPE_DICT[package_type]+'.'+className+' from local resources.'
+        try:
+            dev.log.new_log(err_msg, 'INFO')
+        except:
+            print('INFO: '+err_msg)
         err = sys.exc_info()[1]
         if bool(ModuleNotFoundError):
             package = package_type+'-'+className
@@ -339,12 +343,12 @@ def devisor_import(dev, className, package_type='device'):
                 return importlib.import_module('..'+TYPE_DICT[package_type]+'.'+className, __name__)
             except Exception:
                 err = sys.exc_info()[1]
-                logStr = 'Installing package'+package+' failed: '+str(err)
+                logStr = 'Installing package '+package+' failed: '+str(err)
         else:
             logStr = 'Initializing '+className+' failed: '+str(err)
-        if not dev == None:
+        try:
             dev.log.new_log(logStr, 'WARNING')
-        else:
+        except:
             print('WARNING: '+logStr)
 
 def install_package(package):

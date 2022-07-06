@@ -12,6 +12,7 @@ import signal
 
 from devisor.devisor import DeVisor, get_hostname, make_homie_name
 from devisor.devisorbase import DeviceBase, devisor_import
+from devisor.connections import Connections
 
 parser = argparse.ArgumentParser(description= 'DeVisor: Python program to control, monitor and configure devices in an EoT: https://envot.io')
 parser.add_argument('-host', type=str, help='Host of MQTT Broker. STR Default: "localhost"')
@@ -31,6 +32,15 @@ if args.name == None:
     args.name = ipname
 name = make_homie_name(args.name)
 
+class DeVisorDummy:
+    pass
+dev = DeVisorDummy
+dev.runningConnections = Connections(dev)
+dev.host = args.host
+dev.port = args.port
+dev.name = args.name
+dev.ip = ip
+
 class Runner:
     run = True
     def __init__(self):
@@ -48,7 +58,7 @@ if __name__ == '__main__':
         print('Devisor ' + name + ' started.')
     else:
         driver = devisor_import(None, args.device, 'device')
-        devisor = driver.DeviceClass(None, args.device+'/'+name, args.address, ip=ip, host=args.host, port=args.port)
+        devisor = driver.DeviceClass(dev, args.device+'/'+name, args.address, ip=ip, host=args.host, port=args.port)
         print(args.device + ' ' + args.name + ' started @ ' + str(args.address) + '.')
     while runner.run and devisor.RUN:
         time.sleep(1)
