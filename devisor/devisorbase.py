@@ -93,7 +93,7 @@ class DeviceBase():
         self.up = True
         self.deviceThread = _thread.start_new_thread ( self.device_thread, () )
         self.uptimeThread = _thread.start_new_thread ( self._uptime_thread, () )
-        self.params['$state'].device('ready')
+        self.params['$state'].publish_value('ready')
 
     def device_thread(self):
         pass
@@ -107,7 +107,7 @@ class DeviceBase():
     def exit(self):
         self.exit_pre()
         self.up = False
-        self.params['$state'].device('disconnected')
+        self.params['$state'].publish_value('disconnected')
         self.log.new_log("Devcie closed.")
         self.client.loop_stop()
         self.client.disconnect()
@@ -154,7 +154,7 @@ class DeviceBase():
             if self.up:
                 self.log.new_log("Reconnected to broker: "+str(self.host)+":"
                     +str(self.port))
-                self.params['$state'].device('ready')
+                self.params['$state'].publish_value('ready')
                 for topic in self.subscribed:
                     self.subscribe_topic(topic)
                 self.publish_all()

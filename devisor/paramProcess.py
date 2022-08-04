@@ -43,11 +43,10 @@ class ParameterProcessor():
         self.initDict = initDict
         self.valueInit = initDict['valueInit']
         self.value = self.valueInit
+        self.valueOld = self.valueInit
         self.type = type(initDict['valueInit'])
-        self.valueOld = self.value
         self.triggerParams = []
         self.payload = self.convert_value()
-        self.payloadOld = self.convert_value()
 
         if 'variables' in initDict:
             self.variables = initDict['variables']
@@ -62,33 +61,26 @@ class ParameterProcessor():
                 if self.param in self.dev.initBrokerMsgs:
                     self.broker(self.dev.initBrokerMsgs[param])
             else:
-                self.device(self.valueInit)
+                self.device()
         else:
-            self.device(self.valueInit)
+            self.device()
 
     def broker(self, payload):
-        if payload == self.payload:
-            return True
-        self.payload = payload
-        newValue = self.convert_payload()
-        self.payloadOld = self.payload
-        self.valueOld = self.value
-        self.value = newValue 
+        if not self.change_payload(payload):
+            return False
+        self.change_value(self.convert_payload())
         self.broker_func(self)
-        self.trigger_value_change()
+        self.publish_value()
 
     def broker_func(self, dummy):
         pass
 
 
-    def device(self, value):
-        self.valueOld = self.value
-        self.value = value
-        self.device_func(self)
-        self.trigger_value_change()
+    def device(self):
+        self.publish_value(self.device_func(self))
 
     def device_func(self, dummy):
-        pass
+        return None
 
 
     def convert_payload(self):
@@ -104,9 +96,26 @@ class ParameterProcessor():
     def convert_value(self):
         return str(self.value)
 
-    def publish_value(self):
+    def publish_value(self, value=None):
+        if value != None:
+            if not self.change_value(value):
+                return False
         self.payload = self.convert_value()
         self.dev.publish_topic(self.param, self.payload)
+        return True
+
+    def change_payload(self, payload):
+        if payload == self.payload:
+            return False
+        self.payload = payload
+        return True
+
+    def change_value(self, value):
+        if value == self.value:
+            return False
+        self.valueOld = self.value
+        self.value = value
+        self.trigger_value_change()
         return True
 
     def close(self):
@@ -116,10 +125,8 @@ class ParameterProcessor():
         self.dev.log.new_log(self.param+': '+logStr, level)
 
     def trigger_value_change(self):
-        self.publish_value()
         for triggerParam in self.triggerParams:
-            self.dev.params[triggerParam].device(self.value)
-
+            self.dev.params[triggerParam].device()
 
 
 class ParameterProcessor_bool(ParameterProcessor):
