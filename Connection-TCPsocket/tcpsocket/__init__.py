@@ -4,7 +4,6 @@
 # Python program to control, monitor and configure devices in a EoT: https://envot.io
 # Klemens Schueppert : schueppi@envot.io
 import socket
-import sys
 
 
 class ConnectionClass():
@@ -14,60 +13,46 @@ class ConnectionClass():
         addressArray = address.split(':')
         self.hostname = 'device.lan'
         self.port = 5555
-        self.TIMEOUT = 0.1 
-        self.EOL = '\n'
+        self.TIMEOUT = 1
         if not addressArray[0]=='':
             self.hostname = addressArray[0]
         if len(addressArray)==2:
             self.port = int(addressArray[1])
         self.open()
-        self.failure = 0
 
-    def write(self, value, encode=True):
-        return self.instr.send(value.encode())
+    def write(self, value, codec=True):
+        if type(codec)==str:
+            value = value.encode(codec)
+        elif codec:
+            value = value.encode()
+        self.instr.send(value)
 
     def read(self, length=1024, codec=True):
+        result = self.instr.recv(length)
         if type(codec)==str:
-            return self.instr.recv(length).decode(codec)
+            result = result.decode(codec)
         elif codec:
-            return self.instr.recv(length).decode()
-        else:
-            return self.instr.recv(length)
+            result = result.decode()
+        if result == None:
+            self.devisor.log.new_log('TCP socket: Reading not working',
+                    'WARNING')
+        return result
 
-    def ask(self, value):
-        self.write(value)
-        data = ''
-        try:
-            while not data.endswith(self.EOL):
-                data += self.instr.recv(1024).decode()
-            self.failure = 0
-            return data[:-len(self.EOL)]
-        except Exception:
-            err = sys.exc_info()[1]
-            self.failure += 1
-            if self.failure < 2:
-                self.devisor.log.new_log('Connection "TCP socket" failed to ask for "'
-                    +value+'":'+str(err), "WARNING")
-                data = self.ask(value)
-            elif self.failure < 3:
-                self.devisor.log.new_log('Connection "TCP socket" failed again to ask for "'
-                    +value+'":'+str(err)+"... now reconnect TCP socket.", "WARNING")
-                self.reconnect()
-                data = self.ask(value)
-            else:
-                self.devisor.log.new_log('Connection "TCP socket" failed after reconnect to ask for "'
-                    +value+'":'+str(err)+"... return empty String.", "ERROR")
-            return data 
+    def set_timeout(self, timeoutTime):
+        self.instr.settimeout(timeoutTime)
 
     def open(self):
         self.instr = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
+        self.devisor.log.new_log('Connecting to '+self.hostname+' via port '
+                +str(self.port)+' established.', 'INFO')
         self.instr.connect((self.hostname,self.port))      
+        self.devisor.log.new_log('Connection established.', 'INFO')
         self.instr.settimeout(self.TIMEOUT)
 
     def close(self):
         self.instr.close()
         del(self.instr)
 
-    def reonnect(self):
+    def reconnect(self):
         self.close()
         self.open()
