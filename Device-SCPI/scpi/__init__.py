@@ -5,6 +5,7 @@
 # Klemens Schueppert : schueppi@envot.io
 
 import time
+import sys
 from threading import Timer
 
 from devisor.devisorbase import DeviceBase
@@ -13,21 +14,70 @@ SCPI_CMD_FOLDER = 'scpi'
 SCPI_TRUES = ['1', 'ON', 'TRUE', 'True', 'true']
 
 scpiDict = {
-    '*IDN?' : {
+    '*IDN' : {
         'valueInit' : '',
     },
 }
 
 
 control = {}
+
+def control_eol(pB):
+    eol = '\n'
+    if pB.value == 'r':
+        eol = '\r'
+    elif pB.value == 'rn':
+        eol = '\r\n'
+    pB.dev.set_eol(eol)
+control['command/eol'] = {
+    'valueInit' : 'n',
+    'brokerInit' : True,
+    'datatype' : 'enum',
+    'format' : ['n', 'r', 'rn'],
+    'settable' : True,
+    'broker_func': control_eol,
+}
+
+def control_codec(pB):
+    pB.dev.set_codec(pB.value)
+control['command/codec'] = {
+    'valueInit' : 'UTF-8',
+    'settable' : True,
+    'brokerInit' : True,
+    'broker_func': control_codec,
+}
+
+
 def control_raw_command(pB):
-    if '?' in  pB.value:
-        pB.value = pB.dev.instr.ask(pB.value)
+    if pB.value == 'type your command':
+        pass
+    elif '?' in  pB.value:
+        result = pB.dev.instr.ask(pB.value)
+        pB.dev.params['control/command/raw-result'].value = str(result)
+        pB.dev.params['control/command/raw-result'].publish_value()
+        pB.value = 'type your command'
         pB.publish_value()
     else:
-        pB.dev.instr.send(pB.value)
+        pB.dev.instr.write(pB.value)
 control['command/raw'] = {
-    'valueInit' : '',
+    'valueInit' : 'type your command',
+    'settable' : True,
+    'broker_func' : control_raw_command,
+}
+
+def control_raw_read(pB):
+    result = pB.dev.instr.read()
+    pB.dev.params['control/command/raw-result'].value = str(result)
+    pB.dev.params['control/command/raw-result'].publish_value()
+    pB.value = False
+    pB.publish_value()
+control['command/raw-read'] = {
+    'valueInit' : False,
+    'settable' : True,
+    'broker_func' : control_raw_read,
+}
+control['command/raw-result'] = {
+    'valueInit' : 'no results yet',
     'settable' : True,
 }
 
@@ -44,15 +94,22 @@ control['read/interval'] = {
     'settable' : True,
     'unit': 's',
 }
+
+def control_init_read_selection(pB):
+    for reader in pB.value:
+        pB.dev.params['control/read/remove/$format'].value.append(reader)
+        pB.dev.params['control/read/remove/$format'].publish_value()
 control['read/selection'] = {
     'valueInit': [],
     'brokerInit' : True,
+    'broker_func' : control_init_read_selection,
 }
 
 def control_read_add(pB):
     if not (pB.value is 'Choose' 
             or pB.value in pB.dev.params['control/read/selection'].value):
         pB.dev.params['control/read/selection'].value.append(pB.value)
+        pB.dev.params['control/read/selection'].publish_value()
         pB.dev.params['control/read/remove/$format'].value = pB.dev.params['control/read/selection'].value + ['Choose']
         pB.dev.params['control/read/remove/$format'].publish_value()
         pB.value = 'Choose'
@@ -68,6 +125,7 @@ def control_read_remove(pB):
     if (not pB.value is 'Choose' 
             and pB.value in pB.dev.params['control/read/selection'].value):
         pB.dev.params['control/read/selection'].value.remove(pB.value)
+        pB.dev.params['control/read/selection'].publish_value()
         pB.dev.params['control/read/remove/$format'].value = pB.dev.params['control/read/selection'].value + ['Choose']
         pB.dev.params['control/read/remove/$format'].publish_value()
         pB.value = 'Choose'
@@ -152,6 +210,7 @@ config['load'] = {
     'brokerInit' : False,
     'format' : ['Choose'],
     'datatype' : 'enum',
+    'settable' : True,
 }
 
 def config_remove(pB):
@@ -190,15 +249,23 @@ class DeviceClass(DeviceBase):
         self.measures = 5
         self.digitals = 8
         self.analogs = 4
-        self.preSymbol = ':'
+        self.channels = ['x', 'y', 'z']
+        self.preSymbol = ''
         self.initNodes = {}
         self.initNodes['control'] = control.copy()
-        self.initNodes['control']['order'] = ['read', 'read/interval', 'read/selection', 'read/remove', 'read/add', 'read/selected']
+        self.initNodes['control']['order'] = ['read', 'read/interval', 'read/remove', 'read/selection', 'read/add', 'read/selected', 'command/eol', 'command/codec', 'command/raw', 'command/raw-read', 'command/raw-result']
         self.initNodes['config'] = config.copy()
         self.initNodes['config']['order'] = ['idn', 'save', 'load', 'remove']
+        self.scpi_readables = []
         self.init_scpi_pre()
         self._init_scpi_dict()
         self.initNodes['control']['read/add']['format'] = ['Choose'] + self.scpi_readables
+
+    def set_eol(self, eol='\n'):
+        self.instr.eol = eol
+
+    def set_codec(self, codec=True):
+        self.instr.codec = codec
 
     def init_scpi_pre(self):
         self.scpiDict = scpiDict
@@ -255,7 +322,6 @@ class DeviceClass(DeviceBase):
         pB.publish_value()
 
     def _init_scpi_dict(self):
-        self.scpi_readables = []
         for cmd in self.scpiDict:
             channels = [0]
             if '<a>' in cmd:
@@ -264,11 +330,11 @@ class DeviceClass(DeviceBase):
                 channels = list(range(1,self.measures+1))
             if '<d>' in cmd:
                 channels = list(range(self.digitals))
+            if '<c>' in cmd:
+                channels = self.channels
             for i,chan in enumerate(channels):
                 chanstr = str(chan)
-                cmdstr = cmd.replace('<a>', chanstr)
-                cmdstr = cmdstr.replace('<x>', chanstr)
-                cmdstr = cmdstr.replace('<d>', chanstr)
+                cmdstr = self._insert_channels(cmd, chanstr)
                 paramDict = { 'brokerInit': False }
                 paramDict.update(self.scpiDict[cmd])
                 name = cmdstr.replace(':','/')
@@ -291,6 +357,12 @@ class DeviceClass(DeviceBase):
                     paramDict['broker_func'] = self.scpi_trigger
                 paramDict['variables'] = {'scpi' : self.preSymbol+cmdstr}
                 self.create_property(name, SCPI_CMD_FOLDER, paramDict)
+
+    def _insert_channels(self, cmdstr, chanstr):
+        for placeholder in ['<a>','<x>','<d>','<c>']:
+            cmdstr = cmdstr.replace(placeholder, chanstr)
+        return cmdstr
+
 
     def _init_config_saved(self):
         savedConfigs = []

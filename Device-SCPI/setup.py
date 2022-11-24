@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="device-scpi",
-    version="0.1.1",
+    version="0.1.2",
     author="schueppi",
     author_email="schueppi@schueppi.com",
     description="A device to handle generic SCPI devices mostly used as a parent class for other SCPI devices.",
