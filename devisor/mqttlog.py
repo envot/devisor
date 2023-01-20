@@ -37,7 +37,7 @@ class MQTTLog():
             self.logArray.append(logMessageTimed)
             self.logArray = self.logArray[-self.length:]
             try:
-                self.dev.params['logging/logs'].device('\r\n'.join(self.logArray))
+                self.dev.params['logging/logs'].publish_value('\r\n'.join(self.logArray))
             except:
                 pass
         
@@ -51,10 +51,10 @@ class MQTTLog():
 
     def _convert_level(self, level):
         errorMsg = ''
-        if type(level) == int:
+        if isinstance(level, int):
             return level
-        elif type(level) == str:
-            if level in LOG_LEVELS:
+        elif isinstance(level, str):
+            if level.upper() in LOG_LEVELS:
                 return LOG_LEVELS[level.upper()]
             else:
                 errorMsg = 'Log level "'+level+'"not available.'
@@ -63,4 +63,3 @@ class MQTTLog():
         if errorMsg:
             self.new_log("Log level recognization failed: "+errorMsg, level='DEBUG')
         return False
-
