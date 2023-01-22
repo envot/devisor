@@ -1,4 +1,4 @@
-FROM python:3.9.12-alpine3.15
+FROM python:3.9.16-alpine3.17
 
 MAINTAINER Klemens Schueppert "schueppi@envot.io"
 
