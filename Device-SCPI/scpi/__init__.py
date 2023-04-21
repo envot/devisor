@@ -83,7 +83,7 @@ control['command/raw-result'] = {
 
 def control_change_read_interval(pB):
     if pB.dev.up:
-        if pB.dev.ReadOutThread.isAlive():
+        if pB.dev.ReadOutThread.is_alive():
             pB.dev.ReadOutThread.cancel()
         pB.dev.device_thread()
 control['read/interval'] = {
@@ -106,7 +106,7 @@ control['read/selection'] = {
 }
 
 def control_read_add(pB):
-    if not (pB.value is 'Choose' 
+    if not (pB.value == 'Choose'
             or pB.value in pB.dev.params['control/read/selection'].value):
         pB.dev.params['control/read/selection'].value.append(pB.value)
         pB.dev.params['control/read/selection'].publish_value()
@@ -122,11 +122,12 @@ control['read/add'] = {
     'broker_func': control_read_add,
 }
 def control_read_remove(pB):
-    if (not pB.value is 'Choose' 
+    if (pB.value != 'Choose'
             and pB.value in pB.dev.params['control/read/selection'].value):
         pB.dev.params['control/read/selection'].value.remove(pB.value)
         pB.dev.params['control/read/selection'].publish_value()
-        pB.dev.params['control/read/remove/$format'].value = pB.dev.params['control/read/selection'].value + ['Choose']
+        pB.dev.params['control/read/remove/$format'].value = \
+                pB.dev.params['control/read/selection'].value + ['Choose']
         pB.dev.params['control/read/remove/$format'].publish_value()
         pB.value = 'Choose'
         pB.publish_value()
@@ -139,8 +140,6 @@ control['read/remove'] = {
 }
 
 def control_read_selection(pB):
-    for cmd in pB.dev.scpi_readables:
-        pB.dev.read_selection()
     pB.value = False
     pB.publish_value()
 control['read/selected'] = {
