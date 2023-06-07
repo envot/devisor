@@ -55,7 +55,7 @@ def list_remote_device_packages(availableDevices):
     page = 1
     try:
         while page > 0:
-            r = requests.get("https://gitlab.com/api/v4/projects/19185895/packages?per_page=100&page="+str(page))
+            r = requests.get("https://gitlab.com/api/v4/projects/19185895/packages?per_page=100&page="+str(page), timeout = 3)
             if len(r.json()) > 0:
                 packages.extend(r.json())
                 page += 1
