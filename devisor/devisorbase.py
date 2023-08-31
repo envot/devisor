@@ -145,8 +145,9 @@ class DeviceBase():
                 self.params[topicName].broker(topicMessage)
             except:
                 self.log.new_log(traceback.format_exc(), 'CRITICAL')
-                self.params[topicName].value = self.params[topicName].valueOld
-                self.params[topicName].publish_value()
+                if topicName in self.params:
+                    self.params[topicName].value = self.params[topicName].valueOld
+                    self.params[topicName].publish_value()
 
 
     def on_connect(self, client, userdata, flags, rc):
