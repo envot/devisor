@@ -73,14 +73,14 @@ class DeviceClass(DeviceBase):
         cpuusage = psutil.cpu_percent(percpu=True)
         cpufreq = psutil.cpu_freq(percpu=True)
         for i in range(psutil.cpu_count()):
-            self.params['laptop/cpu'+ str(i) +'/cpu_percent'].device(cpuusage[i])
-            self.params['laptop/cpu'+ str(i) +'/cpu_freq'].device(cpufreq[i].current)
+            self.params['laptop/cpu'+ str(i) +'/cpu_percent'].publish_value(cpuusage[i])
+            self.params['laptop/cpu'+ str(i) +'/cpu_freq'].publish_value(cpufreq[i].current)
             
     def get_battery(self):
         try: 
-            self.params['laptop/battery'].device(psutil.sensors_battery().percent)
+            self.params['laptop/battery'].publish_value(psutil.sensors_battery().percent)
         except:
-            self.params['laptop/battery'].device(0)
+            self.params['laptop/battery'].publish_value(0)
     
     def get_illuminance(self):
         try:
@@ -92,7 +92,7 @@ class DeviceClass(DeviceBase):
             f.close()
         except:
             content = 0
-        self.params['laptop/illuminance'].device(content)
+        self.params['laptop/illuminance'].publish_value(content)
             
     def find_all(self, name, path):
         result = []
