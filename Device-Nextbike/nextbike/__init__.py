@@ -14,7 +14,7 @@ def create_station(pB):
     uid = pB.dev.params['config/station-uid'].value
     name = pB.dev.params['config/station-name'].value
     pB.dev.create_station(uid, name)
-    pB.device(False)
+    pB.publish_value(False)
 
 def handle_stations(pB):
     stations2del = []
@@ -76,7 +76,7 @@ stationBikesInitDict = {
 
 def get_number_of_bikes(pB):
     pB.dev.stations[pB.dev.stationsName[pB.param.split('/')[0]]].get_number_of_bikes()
-    pB.device(False)
+    pB.publish_value(False)
 
 stationGetBikesInitDict = {
     'valueInit' : False,
