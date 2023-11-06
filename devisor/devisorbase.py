@@ -338,19 +338,17 @@ def devisor_import(dev, className, package_type='device'):
             package = package_type+'-'+className
             try:
                 install_output = install_package(package)
-                infostr = ('Installed package '+package+': '
+                infoStr = ('Installed package '+package+': '
                             +install_output.stdout.decode()
                             +install_output.stderr.decode())
+                dev.log.new_log(infoStr, 'INFO')
                 return importlib.import_module('..'+TYPE_DICT[package_type]+'.'+className, __name__)
             except Exception:
                 err = sys.exc_info()[1]
                 logStr = 'Installing package '+package+' failed: '+str(err)
         else:
             logStr = 'Initializing '+className+' failed: '+str(err)
-        try:
-            dev.log.new_log(logStr, 'WARNING')
-        except:
-            print('WARNING: '+logStr)
+        dev.log.new_log(logStr, 'WARNING')
 
 def install_package(package):
     package_type = package.split('-')[0]

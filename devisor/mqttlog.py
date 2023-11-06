@@ -33,13 +33,13 @@ class MQTTLog():
     def new_log(self, logMessage, level='INFO'):
         if self._convert_level(level) >= self.level:
             logMessageTimed = str(datetime.datetime.now())[:-4]+': '+logMessage
-
             self.logArray.append(logMessageTimed)
             self.logArray = self.logArray[-self.length:]
             try:
-                self.dev.params['logging/logs'].publish_value('\r\n'.join(self.logArray))
+                self.dev.params['logging/logs'].publish_value(
+                        '\r\n'.join(self.logArray))
             except:
-                pass
+                print(level+': '+logMessageTimed)
         
     def change_level(self, level):
         newlevel = self._convert_level(level)
