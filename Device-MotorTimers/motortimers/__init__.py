@@ -20,7 +20,7 @@ def create_motor(pB):
             pB.dev.create_motor(motorName, addresses)
         else:
             pB.dev.log.new_log('Motor "'+ motorName + '" already running.')
-    pB.device(False)
+    pB.publish_value(False)
 
 def handle_motors(pB):
     motors2del = []
@@ -112,9 +112,9 @@ class Motor():
         self.dev.create_property(self.name, 'times', timeInitDict)
         if 'motors/'+self.name in self.dev.initBrokerMsgs:
             self.change_motor_time(float(self.dev.initBrokerMsgs['times/'+self.name]))
-            self.dev.params['times/'+self.name].device(self.tT)
+            self.dev.params['times/'+self.name].publish_value(self.tT)
             self.pos = float(self.dev.initBrokerMsgs['motors/'+self.name])
-            self.dev.params['motors/'+self.name].device(self.pos)
+            self.dev.params['motors/'+self.name].publish_value(self.pos)
         else:
             self.tT = DEFAULT_TIME
         self.update_params()
