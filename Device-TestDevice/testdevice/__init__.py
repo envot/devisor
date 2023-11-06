@@ -27,7 +27,7 @@ def test_log(pB):
         pB.dev.devisor.log.new_log('Test print from '+pB.dev.name, 'CRITICAL')
     elif pB.value == 'Print Console':
         print('Test print via enum from '+pB.dev.name+'.')
-    pB.device('Choose')
+    pB.publish_value('Choose')
 
 
 control = {
@@ -116,9 +116,9 @@ class DeviceClass(DeviceBase):
         while self.up:
             currTime = time.time()
             if self.lastRandomNumber + self.params['randomizer/refresh-interval'].value < currTime:
-                self.params['randomizer/random-number'].device(100*random.random())
+                self.params['randomizer/random-number'].publish_value(100*random.random())
                 self.lastRandomNumber = currTime
             if self.lastSineWave + 1e-2*1e3/(self.params['sine-wave/frequency'].value) < currTime:
-                self.params['sine-wave/value'].device(50*(1+math.sin(2.*math.pi*1e-3* self.params['sine-wave/frequency'].value * time.time())))
+                self.params['sine-wave/value'].publish_value(50*(1+math.sin(2.*math.pi*1e-3* self.params['sine-wave/frequency'].value * time.time())))
                 self.lastSineWave = currTime
             time.sleep(0.025)
