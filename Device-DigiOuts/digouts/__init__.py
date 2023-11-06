@@ -20,7 +20,7 @@ def create_digout(pB):
             pB.dev.create_digout(digoutName, address)
         else:
             pB.dev.log.new_log('DigOut "'+ digoutName + '" already running.')
-    pB.device(False)
+    pB.publish_value(False)
 
 def handle_digouts(pB):
     digouts2del = []
@@ -103,9 +103,9 @@ class DigOut():
         self.dev.create_property(self.name, 'triggertimes', timeInitDict)
         if 'digouts/'+self.name in self.dev.initBrokerMsgs:
             self.change_digout_time(float(self.dev.initBrokerMsgs['triggertimes/'+self.name]))
-            self.dev.params['triggertimes/'+self.name].device(self.tT)
+            self.dev.params['triggertimes/'+self.name].publish_value(self.tT)
             self.write_output(bool(self.dev.initBrokerMsgs['digouts/'+self.name]))
-            self.dev.params['digouts/'+self.name].device(self.output)
+            self.dev.params['digouts/'+self.name].publish_value(self.output)
         else:
             self.write_output(False)
 
@@ -154,7 +154,7 @@ class DigOut():
 
     def write_output(self, value):
         self.digout.write(value)
-        self.dev.params['digouts/'+self.name].device(value)
+        self.dev.params['digouts/'+self.name].publish_value(value)
         self.dev.log.new_log('Set DigOut "'+ self.name + '" to '+str(value)+'.', 'DEBUG')
         self.output = value
 
