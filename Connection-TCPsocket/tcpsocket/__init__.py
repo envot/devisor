@@ -42,12 +42,15 @@ class ConnectionClass():
         self.instr.settimeout(timeoutTime)
 
     def open(self):
-        self.instr = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
+        self.instr = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.devisor.log.new_log('Connecting to '+self.hostname+' via port '
                 +str(self.port)+' established.', 'INFO')
-        self.instr.connect((self.hostname,self.port))      
-        self.devisor.log.new_log('Connection established.', 'INFO')
-        self.instr.settimeout(self.TIMEOUT)
+        try:
+            self.instr.connect((self.hostname,self.port))
+            self.devisor.log.new_log('Connection established.', 'INFO')
+            self.instr.settimeout(self.TIMEOUT)
+        except:
+            self.devisor.log.new_log('Connection failed.', 'WARNING')
 
     def close(self):
         self.instr.close()
