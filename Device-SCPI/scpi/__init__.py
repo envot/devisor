@@ -110,7 +110,8 @@ def control_read_add(pB):
             or pB.value in pB.dev.params['control/read/selection'].value):
         pB.dev.params['control/read/selection'].value.append(pB.value)
         pB.dev.params['control/read/selection'].publish_value()
-        pB.dev.params['control/read/remove/$format'].value = pB.dev.params['control/read/selection'].value + ['Choose']
+        pB.dev.params['control/read/remove/$format'].value = \
+            pB.dev.params['control/read/selection'].value + ['Choose']
         pB.dev.params['control/read/remove/$format'].publish_value()
         pB.value = 'Choose'
         pB.publish_value()
@@ -150,7 +151,7 @@ control['read/selected'] = {
 
 def control_read_all(pB):
     for cmd in pB.dev.scpi_readables:
-        pB.dev.params[SCPI_CMD_FOLDER+'/'+cmd.replace(':','/')].device('?')
+        pB.dev.params[SCPI_CMD_FOLDER+'/'+cmd.replace(':','/')].device()
     pB.value = False
     pB.publish_value()
 control['read'] = {
@@ -300,20 +301,20 @@ class DeviceClass(DeviceBase):
         value = pB.convert_value()
         pB.dev.instr.write(pB.variables['scpi']+' '+value)
         pB.publish_value()
-    
+
     def scpi_read_bool(self, pB):
         pB.payload = pB.dev.instr.ask(pB.variables['scpi']+'?')
         if pB.payload in SCPI_TRUES:
             pB.value = True
         else:
             pB.value = False
-    
+
     def scpi_write_bool(self, pB):
         if pB.value:
             pB.dev.instr.write(pB.variables['scpi']+' '+SCPI_TRUES[0])
         else:
             pB.dev.instr.write(pB.variables['scpi']+' 0')
-    
+
     def scpi_trigger(self, pB):
         if pB.value:
             pB.dev.instr.write(pB.variables['scpi']+' '+SCPI_TRUES[0])
