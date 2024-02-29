@@ -56,11 +56,6 @@ scpiDict = {
         'valueInit' : '',
         'settable' : False,
     },
-    'VER' : {
-        'name' : 'Firmware',
-        'valueInit' : '',
-        'settable' : False,
-    },
     'VLS' : {
         'name' : 'System velocity',
         'valueInit' : 0.,
@@ -69,22 +64,26 @@ scpiDict = {
     },
 }
 
-    #MOV? gets target positions
-    #NLM set low pos soft limit - NLM? reads
-    #PLM set high pos sot limit - PLM? reads
-    #POS? get real position
-    #PUN? get axis unit
-    
 def cmd_axis(pB):
     ax = pB.param.split('/')[1]
     target = pB.param.split('/')[2]
     cmdsKeys = list(pB.dev.cmds.keys())
     cmdsVals = list(pB.dev.cmds.values())
     cmd = cmdsKeys[cmdsVals.index(target)]
+    if cmd == 'MOV':
+        if not pB.dev.moving:
+            pB.dev.intervalTime = pB.dev.params['control/read/interval'].value
+            pB.dev.moving = True
+        pB.dev.params['control/read/interval'].publish_value(0.1)
+        if pB.dev.ReadOutThread.is_alive():
+            pB.dev.ReadOutThread.cancel()
+            pB.dev.device_thread()
     pB.dev.instr.write(cmd+' '+ax+' '+str(pB.value))
 
 class DeviceClass(scpiPackage.DeviceClass):
     def init_scpi_pre(self):
+        self.intervalTime = 10.
+        self.moving= False
         self.scpiDict = scpiDict.copy()
         self.axes = ['x', 'y', 'z', 'u', 'v', 'w']
         self.cmds = {
@@ -101,7 +100,7 @@ class DeviceClass(scpiPackage.DeviceClass):
         for ax in self.axes:
             self.units[ax] = self.instr.ask('PUN? '+ax)[2:]
             for cmd in self.cmds:
-                axisInit[ax+'/'+self.cmds[cmd]] = { 
+                axisInit[ax+'/'+self.cmds[cmd]] = {
                     'valueInit' : 0.,
                     'settable' : True,
                     'unit' : self.units[ax],
@@ -117,9 +116,9 @@ class DeviceClass(scpiPackage.DeviceClass):
 
     def read_selection(self):
         onTarget = self.read_all_axes(skip=['target'])
-        if onTarget:
-            #TBC read out fast until moves end...
-            pass
+        if onTarget and self.moving:
+            self.params['control/read/interval'].publish_value(self.intervalTime)
+            self.moving = False
         self.device_thread()
 
     def read_all_axes(self, skip=[]):
@@ -127,12 +126,8 @@ class DeviceClass(scpiPackage.DeviceClass):
         for cmd in self.cmds:
             if not self.cmds[cmd] in skip:
                 results = self._convert_axes(cmd)
-                # TBC test it...
                 if cmd == 'ONT':
-                    #print('ONT')
-                    #print(results.values())
-                    #print(1 in results.values())
-                    onTarget = not (1 in results.values())
+                    onTarget = not (0 in results.values())
                 for ax in results:
                     self.params['axis/'+ax+'/'+self.cmds[cmd]].value = results[ax]
                     self.params['axis/'+ax+'/'+self.cmds[cmd]].publish_value()
