@@ -8,7 +8,7 @@ import sys
 
 class ConnectionClass():
     def __init__(self, devisor, address='usbtmc,0x699,0x03a2'):
-        self.devisor = devisor 
+        self.devisor = devisor
         self.address = address
         self.con = self.devisor.runningConnections.open(address)
         self.block = False
@@ -89,5 +89,4 @@ class ConnectionClass():
         self.block = True
 
     def set_timeout(self, timeoutTime):
-        self.instr.set_timeout(timeoutTime)
-
+        self.con.set_timeout(timeoutTime)
