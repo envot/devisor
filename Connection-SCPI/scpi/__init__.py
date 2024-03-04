@@ -81,7 +81,7 @@ class ConnectionClass():
                     +value+'":'+str(err)+"... return empty String.", "ERROR")
                 self.failure = 0
             self.block = False
-            return ''
+            return data
 
     def _wait_ready(self):
         while self.block:
