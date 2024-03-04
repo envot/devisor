@@ -36,6 +36,8 @@ class ConnectionClass():
         if result == None:
             self.devisor.log.new_log('TCP socket: Reading not working',
                     'WARNING')
+        if result == "":
+            raise Exception('Device disconnected.')
         return result
 
     def set_timeout(self, timeoutTime):
