@@ -386,7 +386,7 @@ class DeviceClass(DeviceBase):
     This class is used to communicate with Gamma Ion Vacuum Pump Controller device over the Telnet connection.
     """
 
-    def init_pre(self, address="localhost:7023"): #10.187.144.25
+    def init_pre(self, address="ip-ca.lab:23"):
         """
         Constructor of the class.
 
