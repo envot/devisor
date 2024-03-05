@@ -302,7 +302,7 @@ class DeviceClass(DeviceBase):
     This class is used to communicate with Creotech Booster RF Power Amplifier device over the SCPI interface.
     """
 
-    def init_pre(self, type_address="tcpsocket,amp-fc.lab:5000"):
+    def init_pre(self, type_address="tcpsocket,10.187.144.91:5000"):
         """
         Constructor of the class.
 
