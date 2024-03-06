@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="device-gammaipc",
-    version="0.1.1",
+    version="0.1.2",
     author="Ceki99",
     author_email="antonio.cerovic@gmail.com",
     description="A device to handle Gamma Vacuum Ion Pump Controller.",
