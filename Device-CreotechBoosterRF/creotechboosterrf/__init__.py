@@ -413,7 +413,7 @@ class DeviceClass(DeviceBase):
 
         if enabled != "":
             self.write_to_broker(
-                [f'channels/{ch}/enabled' for ch in range(self.numOfChannels)],
+                [f'channels/{ch}/enable' for ch in range(self.numOfChannels)],
                 [True if i=="1" else False for i in "{0:08b}".format(int(enabled))][::-1]
             )
         
