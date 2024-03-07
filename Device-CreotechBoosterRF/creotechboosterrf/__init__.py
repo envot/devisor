@@ -66,7 +66,7 @@ def enable_all_channels(pB):
             pB.dev.params[f'general/enable-all'].publish_value(False)
             return
 
-        for ch in range(8):
+        for ch in range(pB.dev.numOfChannels):
             pB.dev.params[f'channels/{ch}/enable'].publish_value(True)
         
         pB.dev.params[f'general/enable-all'].publish_value(False)
@@ -314,6 +314,7 @@ class DeviceClass(DeviceBase):
         """
 
         self.initNodes = initNodes
+        self.numOfChannels = 8
         self.connection_type, self.address = type_address.split(",")
 
     def init_after(self):
@@ -375,7 +376,22 @@ class DeviceClass(DeviceBase):
             self.dev.log.new_log("Unable to disconnect from the device.", "ERROR")
             return
         
-    def get_control_info(self): ### TODO ###
+    def write_to_broker(self, topics, values):
+        """
+        Function is used to write data to the broker.
+
+        Parameters:
+        topic (list): list of topics to write values to
+        values (list): list of values that need to be written to the broker
+
+        Returns:
+        No returns
+        """
+
+        for topic, value in zip(topics, values):
+            self.params[topic].publish_value(value)
+
+    def get_control_info(self):
         """
         Function is used to read channel data from Creotech Booster RF Power Amplifier device.
 
@@ -386,14 +402,22 @@ class DeviceClass(DeviceBase):
         No returns
         """
 
-        detected = [True if i=="1" else False for i in "{0:08b}".format(int(self.connection.ask("chan:det? all").strip("\r")))][::-1]
-        enabled = [True if i=="1" else False for i in "{0:08b}".format(int(self.connection.ask("chan:enab? all").strip("\r")))][::-1]
+        detected = self.connection.ask("chan:det? all").strip("\r")
+        enabled = self.connection.ask("chan:enab? all").strip("\r")
 
-        for ch, detected_ch, enabled_ch in zip(range(8), detected, enabled):
-            self.params[f'channels/{ch}/detected'].publish_value(detected_ch)
-            self.params[f'channels/{ch}/enable'].publish_value(enabled_ch)
+        if detected != "":
+            self.write_to_broker(
+                [f'channels/{ch}/detected' for ch in range(self.numOfChannels)],
+                [True if i=="1" else False for i in "{0:08b}".format(int(detected))][::-1]
+            )
+
+        if enabled != "":
+            self.write_to_broker(
+                [f'channels/{ch}/enabled' for ch in range(self.numOfChannels)],
+                [True if i=="1" else False for i in "{0:08b}".format(int(enabled))][::-1]
+            )
         
-    def get_measure_info(self): ### TODO ###
+    def get_measure_info(self):
         """
         Function is used to read measure data from Creotech Booster RF Power Amplifier device.
 
@@ -405,24 +429,51 @@ class DeviceClass(DeviceBase):
         """
 
         # Measure data
-        current = self.connection.ask("meas:curr? all").strip("\r").split(",")
-        temperature = self.connection.ask("meas:temp? all").strip("\r").split(",")
-        output = self.connection.ask("meas:out? all").strip("\r").split(",")
-        input = self.connection.ask("meas:in? all").strip("\r").split(",")
-        reverse = self.connection.ask("meas:rev? all").strip("\r").split(",")
+        current = self.connection.ask("meas:curr? all").strip("\r")
+        temperature = self.connection.ask("meas:temp? all").strip("\r")
+        output = self.connection.ask("meas:out? all").strip("\r")
+        input = self.connection.ask("meas:in? all").strip("\r")
+        reverse = self.connection.ask("meas:rev? all").strip("\r")
         fan_speed = self.connection.ask("meas:fan?").strip("\r")
 
-        # Transfer values to the broker
-        for ch, curr_ch, temp_ch, out_ch, in_ch, rev_ch in zip(range(8), current, temperature, output, input, reverse):
-            self.params[f'channels/{ch}/current'].publish_value(float(curr_ch))
-            self.params[f'channels/{ch}/temperature'].publish_value(float(temp_ch))
-            self.params[f'channels/{ch}/input-power'].publish_value(float(in_ch))
-            self.params[f'channels/{ch}/output-power'].publish_value(float(out_ch))
-            self.params[f'channels/{ch}/reverse-power'].publish_value(float(rev_ch))
-        self.params['general/fan-speed'].publish_value(float(fan_speed))
+        if current != "":
+            self.write_to_broker(
+                [f'channels/{ch}/current' for ch in range(self.numOfChannels)],
+                [float(i) for i in current.split(",")]
+            )
+
+        if temperature != "":
+            self.write_to_broker(
+                [f'channels/{ch}/temperature' for ch in range(self.numOfChannels)],
+                [float(i) for i in temperature.split(",")]
+            )
+
+        if output != "":
+            self.write_to_broker(
+                [f'channels/{ch}/output-power' for ch in range(self.numOfChannels)],
+                [float(i) for i in output.split(",")]
+            )
+
+        if input != "":
+            self.write_to_broker(
+                [f'channels/{ch}/input-power' for ch in range(self.numOfChannels)],
+                [float(i) for i in input.split(",")]
+            )
+
+        if reverse != "":
+            self.write_to_broker(
+                [f'channels/{ch}/reverse-power' for ch in range(self.numOfChannels)],
+                [float(i) for i in reverse.split(",")]
+            )
+
+        if fan_speed != "":
+            self.write_to_broker(
+                ['general/fan-speed'],
+                [float(fan_speed)]
+            )
 
         
-    def get_interlock_info(self): ### TODO ###
+    def get_interlock_info(self):
         """
         Function is used to read interlock data from Creotech Booster RF Power Amplifier device.
 
@@ -434,16 +485,27 @@ class DeviceClass(DeviceBase):
         """
 
         # Interlock power
-        for ch in range(8):
+        for ch in range(self.numOfChannels):
             power = self.connection.ask(f"int:pow? {ch}")
-            self.params[f'channels/{ch}/max-power'].publish_value(float(power))
+
+            if power != "":
+                self.write_to_broker(
+                    [f'channels/{ch}/max-power'],
+                    [float(power)]
+                )
 
         # Interlock status
-        status = [True if i=="1" else False for i in "{0:08b}".format(int(self.connection.ask("int:stat? all").strip("\r")))][::-1]
-        error = [True if i=="1" else False for i in "{0:08b}".format(int(self.connection.ask("int:err? all").strip("\r")))][::-1]
+        status_response = self.connection.ask("int:stat? all").strip("\r")
+        error_response = self.connection.ask("int:err? all").strip("\r")
 
-        for ch, stat_ch, err_ch in zip(range(8), status, error):
-            self.params[f'channels/{ch}/status'].publish_value("ERROR" if err_ch else "OVERLOAD" if stat_ch else "OK")
+        if status_response != "" and error_response != "":
+            status = [True if i=="1" else False for i in "{0:08b}".format(int(status_response))][::-1]
+            error = [True if i=="1" else False for i in "{0:08b}".format(int(error_response))][::-1]
+
+            self.write_to_broker(
+                [f'channels/{ch}/status' for ch in range(self.numOfChannels)],
+                ["ERROR" if err_ch else "OVERLOAD" if stat_ch else "OK" for err_ch, stat_ch in zip(error, status)]
+            )
 
     def read_loop(self):
         """
