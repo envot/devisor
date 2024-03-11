@@ -13,7 +13,7 @@ class ConnectionClass():
         addressArray = address.split(':')
         self.hostname = 'device.lan'
         self.port = 5555
-        self.TIMEOUT = 1
+        self.TIMEOUT = 5
         if not addressArray[0]=='':
             self.hostname = addressArray[0]
         if len(addressArray)==2:

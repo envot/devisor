@@ -302,7 +302,7 @@ class DeviceClass(DeviceBase):
     This class is used to communicate with Creotech Booster RF Power Amplifier device over the SCPI interface.
     """
 
-    def init_pre(self, type_address="tcpsocket,10.187.144.91:5000"):
+    def init_pre(self, type_address="tcpsocket,localhost:5000"): #10.187.144.91
         """
         Constructor of the class.
 
@@ -406,16 +406,22 @@ class DeviceClass(DeviceBase):
         enabled = self.connection.ask("chan:enab? all").strip("\r")
 
         if detected != "":
-            self.write_to_broker(
-                [f'channels/{ch}/detected' for ch in range(self.numOfChannels)],
-                [True if i=="1" else False for i in "{0:08b}".format(int(detected))][::-1]
-            )
+            try:
+                self.write_to_broker(
+                    [f'channels/{ch}/detected' for ch in range(self.numOfChannels)],
+                    [True if i=="1" else False for i in "{0:08b}".format(int(detected))][::-1]
+                )
+            except Exception as e:
+                print(e)
 
         if enabled != "":
-            self.write_to_broker(
-                [f'channels/{ch}/enable' for ch in range(self.numOfChannels)],
-                [True if i=="1" else False for i in "{0:08b}".format(int(enabled))][::-1]
-            )
+            try:
+                self.write_to_broker(
+                    [f'channels/{ch}/enable' for ch in range(self.numOfChannels)],
+                    [True if i=="1" else False for i in "{0:08b}".format(int(enabled))][::-1]
+                )
+            except Exception as e:
+                print(e)
         
     def get_measure_info(self):
         """
@@ -437,40 +443,58 @@ class DeviceClass(DeviceBase):
         fan_speed = self.connection.ask("meas:fan?").strip("\r")
 
         if current != "":
-            self.write_to_broker(
-                [f'channels/{ch}/current' for ch in range(self.numOfChannels)],
-                [float(i) for i in current.split(",")]
-            )
+            try:
+                self.write_to_broker(
+                    [f'channels/{ch}/current' for ch in range(self.numOfChannels)],
+                    [float(i) for i in current.split(",")]
+                )
+            except Exception as e:
+                print(e)
 
         if temperature != "":
-            self.write_to_broker(
-                [f'channels/{ch}/temperature' for ch in range(self.numOfChannels)],
-                [float(i) for i in temperature.split(",")]
-            )
+            try:
+                self.write_to_broker(
+                    [f'channels/{ch}/temperature' for ch in range(self.numOfChannels)],
+                    [float(i) for i in temperature.split(",")]
+                )
+            except Exception as e:
+                print(e)
 
         if output != "":
-            self.write_to_broker(
-                [f'channels/{ch}/output-power' for ch in range(self.numOfChannels)],
-                [float(i) for i in output.split(",")]
-            )
+            try:
+                self.write_to_broker(
+                    [f'channels/{ch}/output-power' for ch in range(self.numOfChannels)],
+                    [float(i) for i in output.split(",")]
+                )
+            except Exception as e:
+                print(e)
 
         if input != "":
-            self.write_to_broker(
-                [f'channels/{ch}/input-power' for ch in range(self.numOfChannels)],
-                [float(i) for i in input.split(",")]
-            )
+            try:
+                self.write_to_broker(
+                    [f'channels/{ch}/input-power' for ch in range(self.numOfChannels)],
+                    [float(i) for i in input.split(",")]
+                )
+            except Exception as e:
+                print(e)
 
         if reverse != "":
-            self.write_to_broker(
-                [f'channels/{ch}/reverse-power' for ch in range(self.numOfChannels)],
-                [float(i) for i in reverse.split(",")]
-            )
+            try:
+                self.write_to_broker(
+                    [f'channels/{ch}/reverse-power' for ch in range(self.numOfChannels)],
+                    [float(i) for i in reverse.split(",")]
+                )
+            except Exception as e:
+                print(e)
 
         if fan_speed != "":
-            self.write_to_broker(
-                ['general/fan-speed'],
-                [float(fan_speed)]
-            )
+            try:
+                self.write_to_broker(
+                    ['general/fan-speed'],
+                    [float(fan_speed)]
+                )
+            except Exception as e:
+                print(e)
 
         
     def get_interlock_info(self):
@@ -489,10 +513,13 @@ class DeviceClass(DeviceBase):
             power = self.connection.ask(f"int:pow? {ch}")
 
             if power != "":
-                self.write_to_broker(
-                    [f'channels/{ch}/max-power'],
-                    [float(power)]
-                )
+                try:
+                    self.write_to_broker(
+                        [f'channels/{ch}/max-power'],
+                        [float(power)]
+                    )
+                except Exception as e:
+                    print(e)
 
         # Interlock status
         status_response = self.connection.ask("int:stat? all").strip("\r")
@@ -502,10 +529,13 @@ class DeviceClass(DeviceBase):
             status = [True if i=="1" else False for i in "{0:08b}".format(int(status_response))][::-1]
             error = [True if i=="1" else False for i in "{0:08b}".format(int(error_response))][::-1]
 
-            self.write_to_broker(
-                [f'channels/{ch}/status' for ch in range(self.numOfChannels)],
-                ["ERROR" if err_ch else "OVERLOAD" if stat_ch else "OK" for err_ch, stat_ch in zip(error, status)]
-            )
+            try:
+                self.write_to_broker(
+                    [f'channels/{ch}/status' for ch in range(self.numOfChannels)],
+                    ["ERROR" if err_ch else "OVERLOAD" if stat_ch else "OK" for err_ch, stat_ch in zip(error, status)]
+                )
+            except Exception as e:
+                print(e)
 
     def read_loop(self):
         """
