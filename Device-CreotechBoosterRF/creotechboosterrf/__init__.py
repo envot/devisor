@@ -16,7 +16,6 @@ def enable_channel(pB):
 
     Parameters:
     pB : parameter base
-    ch (int): channel number
 
     Returns:
     No returns
@@ -104,8 +103,7 @@ def reset_interlock(pB):
 
     Parameters:
     pB : parameter base
-    ch (int): channel number
-
+    
     Returns:
     No returns
     """
