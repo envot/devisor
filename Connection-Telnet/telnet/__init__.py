@@ -9,13 +9,16 @@ import time
 import telnetlib
 
 class ConnectionClass():
-    def __init__(self, devisor, address='localhost:23'):
+    def __init__(self, devisor, address='localhost:23', user="", password=""):
         self.host = address.split(':')[0]
         self.port = int(address.split(':')[1])
         self.devisor = devisor 
         self.eol = b'\r\n'
         # connection timeout 
         self.timeout = 1
+        self.user = user
+        self.password = password 
+
         self._connect_device()
         self.block = False
 
@@ -39,8 +42,28 @@ class ConnectionClass():
         '''
         Establish connection.
         '''
+        
         self.t = telnetlib.Telnet(self.host, port=self.port)
+
+        expected_login = [b"Login:", b"login:", b"Username:", b"username:"]
+        expected_password = [b"Password:", b"password:"]
+
+        # Check for login
+        _, matched_text, _ = self.t.expect(expected_login, timeout=self.timeout)
+
+        if matched_text != None:
+            self.t.write(self.user.encode() + self.eol)
+            self.t.expect(expected_password)
+            self.t.write(self.password.encode() + self.eol)
+
+            _, matched_text, _  =  self.t.expect([b">"], timeout=self.timeout)
+
+            if matched_text == None:
+                self.devisor.log.new_log('Connecting unsuccessful.', 'WARNING')
+                return
+
         self.devisor.log.new_log('Established "telnet" connection.', 'INFO')
+    
 
 
     @_wait_ready
