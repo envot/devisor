@@ -145,7 +145,6 @@ class DeviceClass(DeviceBase):
         
         # Send message
         self.connection.write(self.commands[id]["message"](args))
-        print(self.commands[id]["message"](args))
 
         # Check for response
         if id in self.responses.keys():
@@ -156,7 +155,6 @@ class DeviceClass(DeviceBase):
             
             # Send followup
             self.connection.write(self.commands[id_followup]["message"]())
-            print(self.commands[id_followup]["message"]())
 
             # Check for followup response
             if id_followup in self.responses.keys():
@@ -175,7 +173,6 @@ class DeviceClass(DeviceBase):
 
         try:
             response = self.connection.read().strip("\r\n")
-            print(response)
             data = self.responses[id]["data"](self.responses[id]["split"](response))
             for value, topic in zip(data, self.responses[id]["topics"]):
                 if topic != "":
@@ -185,7 +182,7 @@ class DeviceClass(DeviceBase):
 
     def read_loop(self):
         """
-        Function is used to read status continuously from Bridge device.
+        Function is used to continuously read status from Bridge device.
 
         Parameters:
         No parameters
