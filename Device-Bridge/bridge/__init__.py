@@ -20,8 +20,8 @@ def reconnect_handle(pB):
     No returns
     """
 
-    pB.dev.connection.reconnect()
     pB.dev.params['control/reconnect'].publish_value(False)
+    pB.dev.connection.reconnect()
 
 def read_interval_handle(pB):
     """
@@ -50,12 +50,12 @@ control['reconnect'] = {
     'valueInit' : False,
     'broker_func' : reconnect_handle,
     'datatype' : 'boolean',
-    'brokerInit' : True,
+    'brokerInit' : False,
     'settable' : True,
 }
 
 control['read-interval'] = {
-    'valueInit' : 20.0,
+    'valueInit' : 60.0,
     'settable' : True,
     'broker_func' : read_interval_handle,
     'unit' : 's'
