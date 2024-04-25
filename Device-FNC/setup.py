@@ -1,8 +1,8 @@
 import setuptools
 
 setuptools.setup(
-    name="device-bridge",
-    version="0.1.0",
+    name="device-fnc",
+    version="0.1.1",
     author="Ceki99",
     author_email="antonio.cerovic@gmail.com",
     description="A device to handle Fiber Noise Cancellation device.",
