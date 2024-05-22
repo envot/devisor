@@ -12,7 +12,8 @@ import subprocess
 import pathlib
 import importlib
 
-import paho.mqtt.client as mqttClient
+import paho.mqtt
+import paho.mqtt.client as mqtt
 
 import _thread
 
@@ -217,7 +218,11 @@ class DeviceBase():
 
 
     def _connect_mqtt_client(self):
-        self.client = mqttClient.Client(self.topicFolder)
+        if int(paho.mqtt.__version__[0]) == 1:
+            self.client = mqtt.Client(self.topicFolder)
+        else:
+            self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1,
+                                        client_id=self.topicFolder)
         self.client.on_connect = self.on_connect
         self.client.on_message = self.on_message
         self.client.will_set(self.topicFolder+"/$state",
