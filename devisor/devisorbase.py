@@ -10,6 +10,8 @@ import traceback
 import sys
 import subprocess
 import pathlib
+import os
+import inspect
 import importlib
 
 import paho.mqtt
@@ -17,7 +19,7 @@ import paho.mqtt.client as mqtt
 
 import _thread
 
-from .mqttlog import MQTTLog
+from . import mqttlog
 from .paramProcess import init_param_property
 from .params import initDeviceAttributes,initNodeAttributes
 
@@ -56,7 +58,7 @@ class DeviceBase():
         self.RUN = True
 
     def init_basics(self):
-        self.log = MQTTLog(self)
+        self.log = mqttlog.MQTTLog(self)
         self._connect_mqtt_client()
         self._get_persistent()
         if '$state' in self.initBrokerMsgs:
@@ -358,6 +360,6 @@ def devisor_import(dev, className, package_type='device'):
 def install_package(package):
     package_type = package.split('-')[0]
     urlstr = 'https://gitlab.com/api/v4/projects/19185895/packages/pypi/simple/'
-    directory = str(pathlib.Path().absolute())+'/devisor/'+TYPE_DICT[package_type]+'/'
+    directory = os.path.dirname(inspect.getfile(mqttlog))+'/'+TYPE_DICT[package_type]+'/'
     return subprocess.run([sys.executable, "-m", "pip", "install", package, '--no-index', '--find-links', urlstr+package, '-t', directory],
             capture_output=True)
