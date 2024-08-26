@@ -24,14 +24,14 @@ class ConnectionClass():
         self.stopbits = self.stopbits_dict[stopbits] if stopbits in self.stopbits_dict.keys() else serial.STOPBITS_ONE
 
         # Open
-        self.open()
+        self.instr = self.open()
 
     def write(self, value, codec=True):
         if not type(codec)==str:
             if codec:
                 codec = self.codec
             else:
-                codec = ''
+                return self.instr.write(value)
         return self.instr.write((value+self.eol).encode(self.codec))
 
     def read(self, length=1024, codec=True):
@@ -56,12 +56,15 @@ class ConnectionClass():
 
     def open(self):
         try:
-            self.instr = serial.Serial(self.addressArray[0],
+            instr = serial.Serial(self.addressArray[0],
                     baudrate=self.baudrate, bytesize=self.bytesize, parity=self.parity,
                     stopbits=self.stopbits, xonxoff=0, rtscts=0, timeout=0.1)
             self.devisor.log.new_log(f'Connection "serial" successfully connected to "{self.addressArray[0]}".', "INFO")
         except:
+            instr = None
             self.devisor.log.new_log(f'Connection "serial" to "{self.addressArray[0]}" failed.', "WARNING")
+
+        return instr
 
     def close(self):
         self.instr.close()
