@@ -10,7 +10,7 @@ import os
 import sys
 import signal
 
-from devisor.devisor import DeVisor, get_hostname, make_homie_name
+from devisor.devisor import DeVisor, get_hostname, make_homie_name, DeVisorDummy
 from devisor.devisorbase import devisor_import
 from devisor.connections import Connections
 
@@ -42,14 +42,7 @@ if args.name is None:
     args.name = ipname
 name = make_homie_name(args.name)
 
-class DeVisorDummy:
-    def __init__(self):
-        self.runningConnections = Connections(self)
-        self.host = args.host
-        self.port = args.port
-        self.name = args.name
-        self.ip = ip
-dev = DeVisorDummy()
+dev = DeVisorDummy(args.name, args.host, args.port)
 
 class Runner:
     run = True

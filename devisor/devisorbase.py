@@ -19,9 +19,7 @@ import paho.mqtt.client as mqtt
 
 import _thread
 
-from . import mqttlog
-from .paramProcess import init_param_property
-from .params import initDeviceAttributes,initNodeAttributes
+from . import mqttlog, paramProcess, params
 
 HOMIE_SET = "/set"
 
@@ -187,8 +185,8 @@ class DeviceBase():
         if not node in self.params['$nodes'].value:
             self.params['$nodes'].value.append(node)
             self.params['$nodes'].publish_value()
-            for attr in initNodeAttributes:
-                self._init_param(node+'/'+attr, initNodeAttributes[attr])
+            for attr in params.initNodeAttributes:
+                self._init_param(node+'/'+attr, params.initNodeAttributes[attr])
 
     def remove_node(self, node):
         if node in self.params['$nodes'].value:
@@ -247,9 +245,8 @@ class DeviceBase():
         self.broker = self.broker_run
 
     def _init_device_attributes(self):
-        for attribute in initDeviceAttributes:
-            self._init_param(attribute, initDeviceAttributes[attribute])
-
+        for attribute in params.initDeviceAttributes:
+            self._init_param(attribute, params.initDeviceAttributes[attribute])
 
     def _init_nodes(self):
         for node in self._order_dict(self.initNodes):
@@ -265,7 +262,7 @@ class DeviceBase():
         initAttrDict = {}
         initAttrDict['broker_func'] = keep_private_parameter
         initAttrDict['valueInit'] = value
-        init_param_property(self, param, initAttrDict)
+        paramProcess.init_param_property(self, param, initAttrDict)
     
 
     def _init_param_attributes(self, param, initDict):
@@ -292,7 +289,7 @@ class DeviceBase():
             self._init_param_attributes(param, initDict.copy())
             self.subscribe_topic(param+HOMIE_SET)
             self.subscribed.append(param+HOMIE_SET)
-        return init_param_property(self, param, initDict.copy())
+        return paramProcess.init_param_property(self, param, initDict.copy())
 
 
     def _order_dict(self, initDict):

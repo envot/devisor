@@ -9,11 +9,12 @@ import time
 import datetime
 import socket
 import os
+import inspect
 import sys
 import requests
 
-from .devisorbase import DeviceBase,devisor_import
-from .connections import Connections
+from .devisorbase import DeviceBase, devisor_import
+from . import mqttlog, connections
 
 def get_hostname():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -41,7 +42,7 @@ def make_homie_name(rawName):
     return name.lower()
 
 def list_local_device_packages(availableDevices):
-    devisorDevDir = './devisor/devices'
+    devisorDevDir = os.path.dirname(inspect.getfile(mqttlog))+'/devices/'
     filenames = os.listdir(devisorDevDir)
     for filename in filenames:
         if (not (filename in ['__pycache__.py'] and
@@ -281,7 +282,7 @@ class DeVisor(DeviceBase):
         self.devisor = self
         self.dev = self
         self.topicFolder = ("devisor/"+self.name)
-        self.runningConnections = Connections(self)
+        self.runningConnections = connections.Connections(self)
         self.runningDevices = {}
         self.subscribed = []
 
@@ -340,3 +341,15 @@ class DeVisor(DeviceBase):
             else:
                 self.otherDevices[topicFolder] = payload
                 self.check_name('')
+
+class DeVisorDummy():
+    """
+    Dummy class to fake devisor
+    """
+    def __init__(self, device_name, host, port):
+        self.log = mqttlog.MQTTLog(self)
+        self.runningConnections = connections.Connections(self)
+        self.host = host
+        self.port = port
+        self.name = device_name
+        self.ip = device_name.split('-')[0]
