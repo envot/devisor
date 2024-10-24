@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 
 # Python program to control, monitor and configure devices in an EoT: https://envot.io
 # Klemens Schueppert : schueppi@envot.io
@@ -56,10 +56,16 @@ scpiDict = {
         'valueInit' : '',
         'settable' : False,
     },
+    'VER' : {
+        'name' : 'Firmware',
+        'valueInit' : '',
+        'settable' : False,
+    },
     'VLS' : {
         'name' : 'System velocity',
         'valueInit' : 0.,
-        'settable' : False,
+        'settable' : True,
+        'format' : "3.84143172295e-05:2.5",
         'unit': 'mm/s'
     },
 }
@@ -71,7 +77,7 @@ def cmd_axis(pB):
     cmdsVals = list(pB.dev.cmds.values())
     cmd = cmdsKeys[cmdsVals.index(target)]
     if cmd == 'MOV':
-        if not pB.dev.moving:
+        if pB.dev.moving and pB.dev.params['control/read/interval'].value != 0.1:
             pB.dev.intervalTime = pB.dev.params['control/read/interval'].value
             pB.dev.moving = True
         pB.dev.params['control/read/interval'].publish_value(0.1)
@@ -102,11 +108,15 @@ class DeviceClass(scpiPackage.DeviceClass):
             for cmd in self.cmds:
                 axisInit[ax+'/'+self.cmds[cmd]] = {
                     'valueInit' : 0.,
+                    'brokerInit' : False,
                     'settable' : True,
                     'unit' : self.units[ax],
                     'broker_func' : cmd_axis,
                     }
         self.initNodes['axis'] = axisInit
+
+    def init_scpi_after(self):
+        self.read_all_axes()
 
     def scpi_trigger(self, pB):
         if pB.value:
