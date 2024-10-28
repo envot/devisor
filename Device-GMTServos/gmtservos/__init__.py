@@ -80,19 +80,12 @@ def broker_change_position(pB):
     pps = 40000
     pB.dev.move_abs(pB.value*1e+4, pps, pB.dev.servos[pB.param.split('/')[1]].id)
 
-def device_change_position(pB):
-    try:
-        pB.dev.get_actual_pos(pB.dev.servos[pB.param.split('/')[1]].id)
-    except:
-        pB.new_log("No servos found with name "
-                +str(pB.param.split('/')[1]) + ". Probably starting servo...")
 
 servoPosInitDict = {
     'valueInit' : 0.,
     'brokerInit' : False, # accessing servo's id not possible at startup
     'format' : "-10:10",
     'broker_func' : broker_change_position,
-    'device_func' : device_change_position,
     'settable' : True,
     'unit' : 'mm',
 }
@@ -132,9 +125,15 @@ class DeviceClass(DeviceBase):
         self.servos = {}
         self.initNodes = initNodes
 
+    def init_after(self):
+        for sname in self.servos:
+            servo = self.servos[sname]
+            self.params['servos/'+sname+'/position'].publish_value(self.get_actual_pos(servo.id))
+            self.params['servos/'+sname+'/active'].publish_value(self.get_axis_status(servo.id))
+
     def create_servo(self, name, address):
         if name in self.servos:
-            self.devices.log('Servo name "'
+            self.dev.log.new_log('Servo name "'
                     +name
                     +'" already in running.', 30)
         else:
@@ -272,7 +271,7 @@ class DeviceClass(DeviceBase):
         frame_data = slave_ID + frame_type
         self.write_to_bus(frame_data)
 
-    def get_actual_pos(self,slave_ID):
+    def get_actual_pos(self, slave_ID):
         #read out the actual position of the stage
         frame_type = '53'
         frame_data = slave_ID + frame_type
