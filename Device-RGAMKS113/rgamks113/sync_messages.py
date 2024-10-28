@@ -15,6 +15,20 @@ def accept_protocol_response(dev, message):
     regex = re.match('AcceptProtocol\s+(?P<status>OK|ERROR)', message)
     return True if regex['status'] == 'OK' else False
 
+def log_response(dev, message):
+    """
+    Function is called upon receiving response from the RGAMKS113 and log it.
+
+    Parameters:
+    message (string): received sync message
+
+    Returns:
+    (bool): True if there is no error, else False
+    """
+
+    dev.log.new_log(message)
+    return
+
 def info_response(dev, message):
     """
     Function is called upon receiving Info response from the RGAMKS113.
@@ -267,6 +281,12 @@ def measurement_remove_all_response(dev, message):
 syncResponse = {
     'AcceptProtocol' : accept_protocol_response,
     'Info' : info_response,
+    'EGains' : log_response,
+    'InletInfo' : log_response,
+    'RFInfo' : log_response,
+    'MultiplierInfo' : log_response,
+    'SourceInfo' : log_response,
+    'DetectorInfo' : log_response,
     'Control' : control_response,
     'Release' : release_response,
     'FilamentControl' : filament_control_response,

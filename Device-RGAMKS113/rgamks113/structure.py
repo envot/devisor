@@ -35,7 +35,7 @@ initNodes['connection'] = connection
 # Filament node
 def filament_control_thread(pB):
     """
-    This function is used to turn the filament ON / OFF. When turning the filament ON, it first 
+    This function is used to turn the filament ON / OFF. When turning the filament ON, it first
     checks if the pressure is low enough ( < 1e-5 mbar ).
 
     Parameters:
@@ -69,14 +69,14 @@ def filament_control_thread(pB):
             pB.dev.log.new_log("Pressure incorrect.", 'WARNING')
             time.sleep(0.1)
             pB.dev.params['filament/control'].publish_value(False)
-            
+
     elif not pB.dev.params['filament/control'].value:
         pB.dev.sync_communication("FilamentControl Off\n")
 
 
 def filament_control(pB):
     """
-    This function starts new thread in order to turn the filament ON / OFF. 
+    This function starts new thread in order to turn the filament ON / OFF.
 
     Parameters:
     pB
@@ -156,6 +156,9 @@ def measurement_add_analog(pB):
         endMass = int(pB.dev.params['measurement/add-analog/end-mass'].value)
         pointsPerPeak = int(pB.dev.params['measurement/add-analog/points-per-peak'].value)
         accuracy = pB.dev.params['measurement/add-analog/accuracy'].value
+        egain = pB.dev.params['measurement/add-analog/egain'].value
+        source = pB.dev.params['measurement/add-analog/source'].value
+        detector = pB.dev.params['measurement/add-analog/detector'].value
 
         # Check values
         if name == "":
@@ -174,8 +177,8 @@ def measurement_add_analog(pB):
     # Send message to the sensor
     if is_ok:
         pB.dev.addedMeasurements[name] = {"num-of-measurements": pointsPerPeak*(endMass-startMass+1)}
-        pB.dev.sync_communication(f"AddAnalog {name} {startMass} {endMass} {pointsPerPeak} {accuracy} 0 0 0\n")
-        
+        pB.dev.sync_communication(f"AddAnalog {name} {startMass} {endMass} {pointsPerPeak} {accuracy} {egain} {source} {detector}\n")
+
         pB.dev.params['measurement/remove/select/$format'].value.append(pB.dev.params['measurement/add-analog/name'].value)
         pB.dev.params['measurement/remove/select/$format'].publish_value()
         pB.dev.params['scan/add/select/$format'].value.append(pB.dev.params['measurement/add-analog/name'].value)
@@ -183,7 +186,7 @@ def measurement_add_analog(pB):
 
     time.sleep(0.1)
     pB.dev.params['measurement/add-analog'].publish_value(False)
-    
+
     return
 
 def measurement_add_barchart(pB):
@@ -208,6 +211,9 @@ def measurement_add_barchart(pB):
         endMass = int(pB.dev.params['measurement/add-barchart/end-mass'].value)
         filterMode = pB.dev.params['measurement/add-barchart/filter-mode'].value
         accuracy = pB.dev.params['measurement/add-barchart/accuracy'].value
+        egain = pB.dev.params['measurement/add-barchart/egain'].value
+        source = pB.dev.params['measurement/add-barchart/source'].value
+        detector = pB.dev.params['measurement/add-barchart/detector'].value
 
         # Check values
         if name == "":
@@ -227,8 +233,8 @@ def measurement_add_barchart(pB):
     # Send message to the sensor
     if is_ok:
         pB.dev.addedMeasurements[name] = {"num-of-measurements": endMass-startMass+1}
-        pB.dev.sync_communication(f"AddBarchart {name} {startMass} {endMass} {filterMode} {accuracy} 0 0 0\n")
-        
+        pB.dev.sync_communication(f"AddBarchart {name} {startMass} {endMass} {filterMode} {accuracy} {egain} {source} {detector}\n")
+
         pB.dev.params['measurement/remove/select/$format'].value.append(pB.dev.params['measurement/add-barchart/name'].value)
         pB.dev.params['measurement/remove/select/$format'].publish_value()
         pB.dev.params['scan/add/select/$format'].value.append(pB.dev.params['measurement/add-barchart/name'].value)
@@ -236,7 +242,7 @@ def measurement_add_barchart(pB):
 
     time.sleep(0.1)
     pB.dev.params['measurement/add-barchart'].publish_value(False)
-    
+
     return
 
 def measurement_add_peak_jump(pB):
@@ -259,6 +265,9 @@ def measurement_add_peak_jump(pB):
         name = pB.dev.params['measurement/add-peak-jump/name'].value
         filterMode = pB.dev.params['measurement/add-peak-jump/filter-mode'].value
         accuracy = pB.dev.params['measurement/add-peak-jump/accuracy'].value
+        egain = pB.dev.params['measurement/add-peak-jump/egain'].value
+        source = pB.dev.params['measurement/add-peak-jump/source'].value
+        detector = pB.dev.params['measurement/add-peak-jump/detector'].value
 
         # Check values
         if name == "":
@@ -271,8 +280,8 @@ def measurement_add_peak_jump(pB):
     # Send message to the sensor
     if is_ok:
         pB.dev.addedMeasurements[name] = {"num-of-measurements": 1}
-        pB.dev.sync_communication(f"AddPeakJump {name} {filterMode} {accuracy} 0 0 0\n")
-        
+        pB.dev.sync_communication(f"AddPeakJump {name} {filterMode} {accuracy} {egain} {source} {detector}\n")
+
         pB.dev.params['measurement/remove/select/$format'].value.append(pB.dev.params['measurement/add-peak-jump/name'].value)
         pB.dev.params['measurement/remove/select/$format'].publish_value()
         pB.dev.params['scan/add/select/$format'].value.append(pB.dev.params['measurement/add-peak-jump/name'].value)
@@ -280,7 +289,7 @@ def measurement_add_peak_jump(pB):
 
     time.sleep(0.1)
     pB.dev.params['measurement/add-peak-jump'].publish_value(False)
-    
+
     return
 
 def measurement_add_single_peak(pB):
@@ -303,6 +312,9 @@ def measurement_add_single_peak(pB):
         name = pB.dev.params['measurement/add-single-peak/name'].value
         mass = float(pB.dev.params['measurement/add-single-peak/mass'].value)
         accuracy = pB.dev.params['measurement/add-single-peak/accuracy'].value
+        egain = pB.dev.params['measurement/add-single-peak/egain'].value
+        source = pB.dev.params['measurement/add-single-peak/source'].value
+        detector = pB.dev.params['measurement/add-single-peak/detector'].value
 
         # Check values
         if name == "":
@@ -318,8 +330,8 @@ def measurement_add_single_peak(pB):
     # Send message to the sensor
     if is_ok:
         pB.dev.addedMeasurements[name] = {"num-of-measurements": 1}
-        pB.dev.sync_communication(f"AddSinglePeak {name} {mass} {accuracy} 0 0 0\n")
-        
+        pB.dev.sync_communication(f"AddSinglePeak {name} {mass} {accuracy} {egain} {source} {detector}\n")
+
         pB.dev.params['measurement/remove/select/$format'].value.append(pB.dev.params['measurement/add-single-peak/name'].value)
         pB.dev.params['measurement/remove/select/$format'].publish_value()
         pB.dev.params['scan/add/select/$format'].value.append(pB.dev.params['measurement/add-single-peak/name'].value)
@@ -327,7 +339,7 @@ def measurement_add_single_peak(pB):
 
     time.sleep(0.1)
     pB.dev.params['measurement/add-single-peak'].publish_value(False)
-    
+
     return
 
 def measurement_remove(pB):
@@ -364,7 +376,7 @@ def measurement_remove(pB):
         if pB.dev.params['scan/add/select/$format'].value == []:
             pB.dev.params['measurement/remove/select'].publish_value('')
             pB.dev.params['scan/add/select'].publish_value('')
-        
+
         temp = pB.dev.params['scan/list'].value.split(', ')
         if select in temp:
             temp.remove(select)
@@ -438,7 +450,7 @@ measurement['add-analog/end-mass'] = {
 measurement['add-analog/points-per-peak'] = {
     'valueInit' : '32',
     'format' : ['32', '16', '8', '4'],
-    'datatype' : 'enum',   
+    'datatype' : 'enum',
     'settable' : True,
     'brokerInit' : True,
 }
@@ -446,6 +458,21 @@ measurement['add-analog/accuracy'] = {
     'valueInit' : '4',
     'format' : ['0', '1', '2', '3', '4', '5', '6', '7', '8'],
     'datatype' : 'enum',
+    'settable' : True,
+    'brokerInit' : True,
+}
+measurement['add-analog/egain'] = {
+    'valueInit' : 0,
+    'settable' : True,
+    'brokerInit' : True,
+}
+measurement['add-analog/source'] = {
+    'valueInit' : 0,
+    'settable' : True,
+    'brokerInit' : True,
+}
+measurement['add-analog/detector'] = {
+    'valueInit' : 0,
     'settable' : True,
     'brokerInit' : True,
 }
@@ -487,6 +514,21 @@ measurement['add-barchart/accuracy'] = {
     'settable' : True,
     'brokerInit' : True,
 }
+measurement['add-barchart/egain'] = {
+    'valueInit' : 0,
+    'settable' : True,
+    'brokerInit' : True,
+}
+measurement['add-barchart/source'] = {
+    'valueInit' : 0,
+    'settable' : True,
+    'brokerInit' : True,
+}
+measurement['add-barchart/detector'] = {
+    'valueInit' : 0,
+    'settable' : True,
+    'brokerInit' : True,
+}
 
 measurement['add-peak-jump'] = {
     'valueInit' : False,
@@ -513,6 +555,21 @@ measurement['add-peak-jump/accuracy'] = {
     'settable' : True,
     'brokerInit' : True,
 }
+measurement['add-peak-jump/egain'] = {
+    'valueInit' : 0,
+    'settable' : True,
+    'brokerInit' : True,
+}
+measurement['add-peak-jump/source'] = {
+    'valueInit' : 0,
+    'settable' : True,
+    'brokerInit' : True,
+}
+measurement['add-peak-jump/detector'] = {
+    'valueInit' : 0,
+    'settable' : True,
+    'brokerInit' : True,
+}
 
 measurement['add-single-peak'] = {
     'valueInit' : False,
@@ -535,6 +592,21 @@ measurement['add-single-peak/accuracy'] = {
     'valueInit' : '4',
     'format' : ['0', '1', '2', '3', '4', '5', '6', '7', '8'],
     'datatype' : 'enum',
+    'settable' : True,
+    'brokerInit' : True,
+}
+measurement['add-single-peak/egain'] = {
+    'valueInit' : 0,
+    'settable' : True,
+    'brokerInit' : True,
+}
+measurement['add-single-peak/source'] = {
+    'valueInit' : 0,
+    'settable' : True,
+    'brokerInit' : True,
+}
+measurement['add-single-peak/detector'] = {
+    'valueInit' : 0,
     'settable' : True,
     'brokerInit' : True,
 }
@@ -592,7 +664,7 @@ def scan_start_stop(pB):
         if is_ok:
             pB.dev.scanRepeater = Thread(target = pB.dev.repeat_scan)
             pB.dev.scanRepeater.start()
-            
+
 
     elif not pB.dev.params['scan/start-stop'].value:
         pB.dev.sync_communication("ScanStop\n")
@@ -608,7 +680,7 @@ def scan_start_stop(pB):
 
 def scan_add(pB):
     """
-    This function adds a measurement (by name) to the scan. Measurement can not be added 
+    This function adds a measurement (by name) to the scan. Measurement can not be added
     while scan is running.
 
     Parameters:
