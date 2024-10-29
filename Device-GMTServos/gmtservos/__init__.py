@@ -128,7 +128,7 @@ class DeviceClass(DeviceBase):
     def init_after(self):
         for sname in self.servos:
             servo = self.servos[sname]
-            self.params['servos/'+sname+'/position'].publish_value(self.get_actual_pos(servo.id))
+            self.params['servos/'+sname+'/position'].publish_value(self.get_actual_pos(servo.id)*1e-4)
             self.params['servos/'+sname+'/active'].publish_value(self.get_axis_status(servo.id))
 
     def create_servo(self, name, address):
