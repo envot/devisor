@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 
 # Python program to control, monitor and configure devices in a EoT: https://envot.io
 # Klemens Schueppert : schueppi@envot.io
@@ -51,7 +51,7 @@ class WlmDllCaller(object):
         port_c = ctypes.c_long(port)
         kack = ctypes.c_double(0)
         value = self.wlmDataDll.GetFrequencyNum(port_c,kack)
-        return value 
+        return value
 
     def get_power(self, port):
         port_c = ctypes.c_long(port)
@@ -230,7 +230,8 @@ class LaserLock():
                 if abs(error) > self.maxdifference:
                     self.dev.log.new_log('Laser lock {}: value difference cut.'.format(self.name))
                     laserSetDiff = np.sign(error) * np.sign(self.ki) * self.maxdifference
-                self.dev.params['channel/'+str(self.wavemeterchannel)+'/frequency'].publish_value(freqNew)
+                self.dev.params['channel/'+str(self.wavemeterchannel
+                                               )+'/frequency'].publish_value(freqNew)
         else:
             self.locked = True
             self.dev.params['locks/'+self.name+'/locked'].publish_value(True)
@@ -240,10 +241,10 @@ class LaserLock():
         return True
 
     def pid_calc(self):
-        p = self.kp * self.errors[0]
-        i = self.ki * self.errors.sum()
-        d = self.kd * (self.errors[1] - self.errors[0])
-        return p+i+d
+        error_p = self.kp * self.errors[0]
+        error_i = (self.ki * self.errors.sum())/len(self.errors)
+        error_d = self.kd * (self.errors[0] - self.errors[1])
+        return error_p+error_i+error_d
 
     def stop(self):
         if self.active:
