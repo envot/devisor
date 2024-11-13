@@ -42,7 +42,7 @@ class WlmDllCaller(object):
         pressure = self.wlmDataDll.GetPressure(kack)
         return pressure
 
-    def  get_temperature(self):
+    def get_temperature(self):
         kack = ctypes.c_double(0)
         temp = self.wlmDataDll.GetTemperature(kack)
         return temp
@@ -128,6 +128,7 @@ class LaserLock():
         self.dev = dev
         self.active = False
         self.locked = False
+        self.errors = np.ones(20)
 
     def init_after(self):
         self.dev.create_property(self.name+'/frequency-set', 'locks', {
@@ -152,13 +153,18 @@ class LaserLock():
             'brokerInit': True,
             'broker_func': set_lock_value,
             'settable': True,})
-        self.dev.create_property(self.name+'/sign', 'locks', {
-            'valueInit': 1,
+        self.dev.create_property(self.name+'/k-p', 'locks', {
+            'valueInit': 0.0,
             'brokerInit': True,
             'broker_func': set_lock_value,
             'settable': True,})
-        self.dev.create_property(self.name+'/factor', 'locks', {
-            'valueInit': 1e-3,
+        self.dev.create_property(self.name+'/k-i', 'locks', {
+            'valueInit': 1e-6,
+            'brokerInit': True,
+            'broker_func': set_lock_value,
+            'settable': True,})
+        self.dev.create_property(self.name+'/k-d', 'locks', {
+            'valueInit': 0.0,
             'brokerInit': True,
             'broker_func': set_lock_value,
             'settable': True,})
@@ -205,25 +211,39 @@ class LaserLock():
         self.active = True
         self.dev.log.new_log('Lock: {} started'.format(self.name))
 
+    def roll_and_append_error(self, error):
+        np.roll(self.errors, 1)
+        self.errors[0] = error
+
     def adj_freq(self, freqNew):
-        freqDiff = (self.frequencyset - freqNew)*1e6 + self.frequencyshift # THz to MHz
-        laserVoltDiff = self.sign * self.factor * freqDiff
-        if abs(freqDiff) > self.tolerance:
+        error = (self.frequencyset - freqNew)*1e6 + self.frequencyshift # THz to MHz
+        if abs(error) > self.tolerance:
             self.locked = False
             self.dev.params['locks/'+self.name+'/locked'].publish_value(False)
             if freqNew < 0:
-                self.dev.log.new_log('Error: {}. Switching off lock.'.format(freqNew))
-                self.stop()
+                #self.dev.log.new_log('Error: {}. Switching off lock.'.format(freqNew))
+                #self.stop()
+                self.dev.log.new_log('Warning: {}. Measured frequency is not valid. Skipping it.'.format(freqNew))
+                self.roll_and_append_error(0.)
                 return False
             else:
-                if abs(laserVoltDiff) > self.maxdifference:
+                if abs(error) > self.maxdifference:
                     self.dev.log.new_log('Laser lock {}: value difference cut.'.format(self.name))
-                    laserVoltDiff = np.sign(laserVoltDiff) * self.maxdifference
+                    laserSetDiff = np.sign(error) * np.sign(self.ki) * self.maxdifference
+                self.dev.params['channel/'+str(self.wavemeterchannel)+'/frequency'].publish_value(freqNew)
         else:
             self.locked = True
             self.dev.params['locks/'+self.name+'/locked'].publish_value(True)
-        self.laser.set_value_diff(laserVoltDiff)
+        self.roll_and_append_error(error)
+        laserSetDiff = self.pid_calc()
+        self.laser.set_value_diff(laserSetDiff)
         return True
+
+    def pid_calc(self):
+        p = self.kp * self.errors[0]
+        i = self.ki * self.errors.sum()
+        d = self.kd * (self.errors[1] - self.errors[0])
+        return p+i+d
 
     def stop(self):
         if self.active:
@@ -317,37 +337,38 @@ class DeviceClass(DeviceBase):
         self.locks = {}
         self.initNodes = initNodes
         self.wlm = WlmDllCaller()
+        self.saveValues = []
+        self.saveChs = []
+        self.lastTime = time.time()
 
     def device_thread(self):
         while self.up:
             self.get_all()
 
     def get_all(self):
-        results = self.read_multi(
-                [self.wlm.get_frequency, self.wlm.get_power],10)
-        results_t = np.array(results).transpose()
         # should we check for finished threads?
-        adj_freq = Thread(target=self.adjust_frequencies, args=(results_t,))
-        adj_freq.start()
-        pub_ch = Thread(target=self.publish_channels, args=(results_t,))
-        pub_ch.start()
-
-    def adjust_frequencies(self, results_t):
-        for i,name in enumerate(self.locks):
-            lock = self.locks[name]
+        for lockname in self.locks:
+            lock = self.locks[lockname]
             if lock.active:
-                freqNew = (results_t[0][lock.wavemeterchannel-1]).mean()
-                lock.adj_freq(freqNew)
+                value = float(self.wlm.get_frequency(lock.wavemeterchannel))
+                lock.adj_freq_thread = Thread(target=lock.adj_freq, args=(value,))
+                lock.adj_freq_thread.start()
+                self.saveValues.append(value)
+                self.saveChs.append(lock.wavemeterchannel)
+        pub_ch = Thread(target=self.publish_channels, args=())
+        pub_ch.start()
+        time.sleep(0.02)
 
-    def publish_channels(self, results_t):
-        for i in range(8):
-            self.params['channel/'+str(i+1)+'/frequency'].publish_value(
-                    float(results_t[0][i].mean()))
-            self.params['channel/'+str(i+1)+'/power'].publish_value(
-                    float(results_t[1][i].mean()))
+    def publish_channels(self):
+        if time.time() > self.lastTime + self.params['config/refresh-interval'].value:
+            for i in range(8):
+                self.params['channel/'+str(i+1)+'/frequency'].publish_value(float(self.wlm.get_frequency(i+1)))
+                self.params['channel/'+str(i+1)+'/power'].publish_value(float(self.wlm.get_power(i+1)))
+            self.saveValues = []
+            self.saveChs = []
+            self.lastTime = time.time()
         self.params['main/temperature'].publish_value(float(self.wlm.get_temperature()))
         self.params['main/pressure'].publish_value(float(self.wlm.get_pressure()))
-
 
     def create_lock(self, name):
         if name in self.locks:
@@ -362,17 +383,14 @@ class DeviceClass(DeviceBase):
                     self.params['config/locks'].value.append(name)
                     self.params['config/locks'].publish_value()
 
-    def read_all_ch(self, read_functions, values):
-        for i,value in enumerate(values):
-            for ii,read_function in enumerate(read_functions):
-                value.append(read_function(i+1))
+    def read_all_ch_freq(self):
+        values = []
+        for i in range(8):
+            values.append(float(self.wlm.get_frequency(i+1)))
         return values
 
-    def read_multi(self, read_functions, reps, waitTime=0.01):
-        results = []
-        for rep in range(reps):
-            values = [[] for i in range(8)]
-            self.read_all_ch(read_functions, values)
-            results.append(values)
-            time.sleep(waitTime)
-        return results
+    def read_all_ch_pow(self):
+        values = []
+        for i in range(8):
+            values.append(float(self.wlm.get_power(i+1)))
+        return values
