@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="device-creotechboosterrf",
-    version="0.1.7",
+    version="0.1.8",
     author="Ceki99",
     author_email="antonio.cerovic@gmail.com",
     description="A device to handle Creotech Booster RF Power Amplifier.",

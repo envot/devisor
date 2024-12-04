@@ -29,9 +29,9 @@ def enable_channel(pB):
         pB.dev.params[f'channels/{ch}/enable'].publish_value(False)
         return
 
-    # Enable/disable    
+    # Enable/disable
     if pB.dev.params[f'channels/{ch}/enable'].value:
-        response = pB.dev.connection.ask(f"chan:enab {ch}").strip("\r")
+        response = pB.dev.instr.ask(f"chan:enab {ch}").strip("\r")
 
         if response != "OK":
             pB.dev.log.new_log(f"Enabling channel {ch} failed: {response}", "WARNING")
@@ -39,7 +39,7 @@ def enable_channel(pB):
             return
 
     else:
-        response = pB.dev.connection.ask(f"chan:disab {ch}").strip("\r")
+        response = pB.dev.instr.ask(f"chan:disab {ch}").strip("\r")
 
         if response != "OK":
             pB.dev.log.new_log(f"Disabling channel {ch} failed: {response}", "WARNING")
@@ -58,7 +58,7 @@ def enable_all_channels(pB):
     """
 
     if pB.dev.params[f'general/enable-all'].value:
-        response = pB.dev.connection.ask(f"chan:enab all").strip("\r")
+        response = pB.dev.instr.ask(f"chan:enab all").strip("\r")
 
         if response != "OK":
             pB.dev.log.new_log(f"Enabling all channels failed: {response}", "WARNING")
@@ -67,7 +67,6 @@ def enable_all_channels(pB):
 
         for ch in range(pB.dev.numOfChannels):
             pB.dev.params[f'channels/{ch}/enable'].publish_value(True)
-        
         pB.dev.params[f'general/enable-all'].publish_value(False)
 
 def disable_all_channels(pB):
@@ -85,7 +84,7 @@ def disable_all_channels(pB):
 
     # Cannot disable all channels at once apparently
     if pB.dev.params[f'general/disable-all'].value:
-        # response = pB.dev.connection.ask(f"chan:disab all").strip("\r")
+        # response = pB.dev.instr.ask(f"chan:disab all").strip("\r")
 
         # if response != "OK":
         #     pB.dev.log.new_log(f"Disabling all channels failed.", "WARNING")
@@ -103,7 +102,7 @@ def reset_interlock(pB):
 
     Parameters:
     pB : parameter base
-    
+
     Returns:
     No returns
     """
@@ -118,7 +117,7 @@ def reset_interlock(pB):
 
     # Reset
     if pB.dev.params[f'channels/{ch}/reset'].value:
-        response = pB.dev.connection.ask(f"int:cle {ch}").strip("\r")
+        response = pB.dev.instr.ask(f"int:cle {ch}").strip("\r")
 
         if response != "OK":
             pB.dev.log.new_log(f"Reset channel {ch} failed: {response}", "WARNING")
@@ -137,7 +136,7 @@ def reset_all_interlocks(pB):
     """
 
     if pB.dev.params[f'general/reset-all'].value:
-        response = pB.dev.connection.ask(f"int:cle all").strip("\r")
+        response = pB.dev.instr.ask(f"int:cle all").strip("\r")
 
         if response != "OK":
             pB.dev.log.new_log(f"Reset all channels failed: {response}", "WARNING")
@@ -178,14 +177,14 @@ def max_power(pB):
     ch = int(re.match("[^\/]+/(?P<ch>\d)/.*?", pB.param)['ch'])
 
     if 0 < float(pB.dev.params[f'channels/{ch}/max-power/set-max-power'].value) < 38:
-        response = pB.dev.connection.ask(f"int:pow {ch},{pB.dev.params[f'channels/{ch}/max-power/set-max-power'].value}").strip("\r")
+        response = pB.dev.instr.ask(f"int:pow {ch},{pB.dev.params[f'channels/{ch}/max-power/set-max-power'].value}").strip("\r")
 
         if response != "OK":
             pB.dev.log.new_log(f"Setting max power to channel {ch} failed: {response}", "WARNING")
     else:
         pB.dev.log.new_log("Max power out of range. Must be in range [0 dBm, 38 dBm].", "WARNING")
 
-    pB.dev.params[f'channels/{ch}/max-power'].publish_value(float(pB.dev.connection.ask(f"int:pow? {ch}")))
+    pB.dev.params[f'channels/{ch}/max-power'].publish_value(float(pB.dev.instr.ask(f"int:pow? {ch}")))
 
 
 general = {}
@@ -214,7 +213,7 @@ general['reset-all'] = {
     'settable' : True,
     'broker_func' : reset_all_interlocks,
 }
-        
+
 general['fan-speed'] = {
     'valueInit' : 0.0,
     'settable' : True,
@@ -300,7 +299,7 @@ class DeviceClass(DeviceBase):
     This class is used to communicate with Creotech Booster RF Power Amplifier device over the SCPI interface.
     """
 
-    def init_pre(self, type_address="tcpsocket,10.187.144.91:5000"):
+    def init_pre(self):
         """
         Constructor of the class.
 
@@ -313,7 +312,12 @@ class DeviceClass(DeviceBase):
 
         self.initNodes = initNodes
         self.numOfChannels = 8
-        self.connection_type, self.address = type_address.split(",")
+        self.instr = self.devisor.runningConnections.open(self.address)
+        idnStr = self.instr.ask('*IDN?')
+        idnArr = idnStr.split(', ')
+        for idnEle in idnArr:
+            idnArrArr = idnEle.split(' ')
+            self.publish_topic('$fw/'+idnArrArr[0].lower(), ' '.join(idnArrArr[1:]))
 
     def init_after(self):
         """
@@ -327,7 +331,7 @@ class DeviceClass(DeviceBase):
         """
 
         self.connect()
-        
+
     def connect(self):
         """
         This function is used to connect to the device and start all threads.
@@ -339,12 +343,6 @@ class DeviceClass(DeviceBase):
         No returns
         """
 
-        try:
-            self.connection = scpiPackage.ConnectionClass(devisor=self.devisor, address=f'{self.connection_type},{self.address}')
-        except:
-            self.dev.log.new_log("Unable to connect to the device.", "ERROR")
-            return
-        
         # Read initial data
         self.get_control_info()
         self.get_measure_info()
@@ -368,12 +366,6 @@ class DeviceClass(DeviceBase):
 
         self.stopThreads = True
 
-        try:
-            self.connection.close()
-        except:
-            self.dev.log.new_log("Unable to disconnect from the device.", "ERROR")
-            return
-        
     def write_to_broker(self, topics, values):
         """
         Function is used to write data to the broker.
@@ -400,8 +392,8 @@ class DeviceClass(DeviceBase):
         No returns
         """
 
-        detected = self.connection.ask("chan:det? all").strip("\r")
-        enabled = self.connection.ask("chan:enab? all").strip("\r")
+        detected = self.instr.ask("chan:det? all").strip("\r")
+        enabled = self.instr.ask("chan:enab? all").strip("\r")
 
         if detected != "":
             try:
@@ -420,7 +412,7 @@ class DeviceClass(DeviceBase):
                 )
             except Exception as e:
                 print(e)
-        
+
     def get_measure_info(self):
         """
         Function is used to read measure data from Creotech Booster RF Power Amplifier device.
@@ -433,12 +425,12 @@ class DeviceClass(DeviceBase):
         """
 
         # Measure data
-        current = self.connection.ask("meas:curr? all").strip("\r")
-        temperature = self.connection.ask("meas:temp? all").strip("\r")
-        output = self.connection.ask("meas:out? all").strip("\r")
-        input = self.connection.ask("meas:in? all").strip("\r")
-        reverse = self.connection.ask("meas:rev? all").strip("\r")
-        fan_speed = self.connection.ask("meas:fan?").strip("\r")
+        current = self.instr.ask("meas:curr? all").strip("\r")
+        temperature = self.instr.ask("meas:temp? all").strip("\r")
+        output = self.instr.ask("meas:out? all").strip("\r")
+        input = self.instr.ask("meas:in? all").strip("\r")
+        reverse = self.instr.ask("meas:rev? all").strip("\r")
+        fan_speed = self.instr.ask("meas:fan?").strip("\r")
 
         if current != "":
             try:
@@ -494,7 +486,6 @@ class DeviceClass(DeviceBase):
             except Exception as e:
                 print(e)
 
-        
     def get_interlock_info(self):
         """
         Function is used to read interlock data from Creotech Booster RF Power Amplifier device.
@@ -508,7 +499,7 @@ class DeviceClass(DeviceBase):
 
         # Interlock power
         for ch in range(self.numOfChannels):
-            power = self.connection.ask(f"int:pow? {ch}")
+            power = self.instr.ask(f"int:pow? {ch}")
 
             if power != "":
                 try:
@@ -520,8 +511,8 @@ class DeviceClass(DeviceBase):
                     print(e)
 
         # Interlock status
-        status_response = self.connection.ask("int:stat? all").strip("\r")
-        error_response = self.connection.ask("int:err? all").strip("\r")
+        status_response = self.instr.ask("int:stat? all").strip("\r")
+        error_response = self.instr.ask("int:err? all").strip("\r")
 
         if status_response != "" and error_response != "":
             status = [True if i=="1" else False for i in "{0:08b}".format(int(status_response))][::-1]
@@ -555,7 +546,6 @@ class DeviceClass(DeviceBase):
                 self.get_interlock_info()
 
                 last_reading = time.time()
-            
             time.sleep(0.1)
 
 
