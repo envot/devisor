@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="device-physikinstrumenteh840",
-    version="0.1.2",
+    version="0.1.3",
     author="schueppi",
     author_email="schueppi@schueppi.com",
     description="A device to handle H-840 Hexapod Microbot from Physik Instrumente GmbH.",

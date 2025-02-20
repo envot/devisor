@@ -77,7 +77,7 @@ def cmd_axis(pB):
     cmdsVals = list(pB.dev.cmds.values())
     cmd = cmdsKeys[cmdsVals.index(target)]
     if cmd == 'MOV':
-        if pB.dev.moving and pB.dev.params['control/read/interval'].value != 0.1:
+        if not pB.dev.moving and pB.dev.params['control/read/interval'].value != 0.1:
             pB.dev.intervalTime = pB.dev.params['control/read/interval'].value
             pB.dev.moving = True
         pB.dev.params['control/read/interval'].publish_value(0.1)
@@ -125,7 +125,7 @@ class DeviceClass(scpiPackage.DeviceClass):
         pB.publish_value()
 
     def read_selection(self):
-        onTarget = self.read_all_axes(skip=['target'])
+        onTarget = self.read_all_axes()
         if onTarget and self.moving:
             self.params['control/read/interval'].publish_value(self.intervalTime)
             self.moving = False
