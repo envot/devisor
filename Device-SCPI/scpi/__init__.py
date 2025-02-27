@@ -251,6 +251,7 @@ class DeviceClass(DeviceBase):
         self.analogs = 4
         self.channels = ['x', 'y', 'z']
         self.preSymbol = ''
+        self.multiCmd = True
         self.initNodes = {}
         self.initNodes['control'] = control.copy()
         self.initNodes['control']['order'] = ['read', 'read/interval', 'read/remove', 'read/selection', 'read/add', 'read/selected', 'command/eol', 'command/codec', 'command/raw', 'command/raw-read', 'command/raw-result']
@@ -282,15 +283,19 @@ class DeviceClass(DeviceBase):
         pass
 
     def read_selection(self):
-        multiCmdArray = self.params['control/read/selection'].value
-        if len(multiCmdArray) > 0:
-            multiCmdStr = '?;:'.join(multiCmdArray).replace('/',':') + '?'
-            multiReply = self.instr.ask(multiCmdStr)
-            for i,reply in enumerate(multiReply.split(';')):
-                param = SCPI_CMD_FOLDER+'/'+multiCmdArray[i]
-                self.params[param].payload = reply
-                self.params[param].value = self.params[param].convert_payload()
-                self.params[param].publish_value()
+        if self.multiCmd:
+            multiCmdArray = self.params['control/read/selection'].value
+            if len(multiCmdArray) > 0:
+                multiCmdStr = '?;:'.join(multiCmdArray).replace('/',':') + '?'
+                multiReply = self.instr.ask(multiCmdStr)
+                for i,reply in enumerate(multiReply.split(';')):
+                    param = SCPI_CMD_FOLDER+'/'+multiCmdArray[i]
+                    self.params[param].payload = reply
+                    self.params[param].value = self.params[param].convert_payload()
+                    self.params[param].publish_value()
+        else:
+            for param in self.params['control/read/selection'].value:
+                self.params['scpi/'+param].device()
         self.device_thread()
 
     def scpi_read(self, pB):
