@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 
 # Python program to control, monitor and configure devices in a EoT: https://envot.io
 # Klemens Schueppert : schueppi@envot.io
@@ -52,16 +52,23 @@ class ConnectionClass():
             self.devisor.log.new_log('Connection "scpi" read empty: '
                     +str(read_string), "INFO")
 
-    def ask(self, value):
+    def ask(self, value, timeout=10):
         self._wait_ready()
         self._write_raw(value)
+        startTime = time.time()
         data = ''
+        datalength = 0
         try:
-            while not data.endswith(self.eol):
+            while not(len(data) == datalength) or datalength < 1:
+                if time.time() - startTime > timeout:
+                    raise Exception("No response from Device within timeout of %.1f. Current data: %s" % (timeout, data))
+                datalength = len(data)
                 data += self.con.read(1024, codec=self.codec)
             self.failure = 0
             self.block = False
-            return data[:-len(self.eol)]
+            if data[-len(self.eol):] == self.eol:
+                data = data[:-len(self.eol)]
+            return data
         except Exception:
             err = sys.exc_info()[1]
             self.failure += 1

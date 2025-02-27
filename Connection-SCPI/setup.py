@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="connection-scpi",
-    version="0.2.4",
+    version="0.2.5",
     author="schueppi",
     author_email="schueppi@schueppi.com",
     description="A class to providing a SCPI connection.",
