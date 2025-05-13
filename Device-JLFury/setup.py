@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="device-jlfury",
-    version="0.1.0",
+    version="0.1.1",
     author="schueppi",
     author_email="schueppi@schueppi.com",
     description="A device to control a GPS receiver Fury from Jackson Labs.",

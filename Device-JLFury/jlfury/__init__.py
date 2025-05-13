@@ -36,10 +36,10 @@ scpiDict = {
         'settable' : False,
     },
     # somehow not working. Command not found
-    #'gps:satellite:tracking:count' : {
-    #    'valueInit' : 0.,
-    #    'settable' : False,
-    #},
+    'gps:satellite:tracking:count' : {
+        'valueInit' : 0.,
+        'settable' : False,
+    },
     'gps:satellite:visible:count' : {
         'valueInit' : 0.,
         'settable' : False,
@@ -106,6 +106,9 @@ class DeviceClass(scpiPackage.DeviceClass):
         self.scpiDict = scpiDict
         self.multiCmd = False
 
+    def scpi_read_bool(self, pB):
+        self.scpi_read(pB)
+
     def scpi_read(self, pB):
         self.attempt = 1
         self.read_convert_furyData(pB)
@@ -113,23 +116,35 @@ class DeviceClass(scpiPackage.DeviceClass):
 
     def read_convert_furyData(self, pB):
         try:
+            pB.dev.instr.read()
             dataFury = pB.dev.instr.ask(pB.variables['scpi']+'?')
             dataFuryArr = dataFury.split('\r\n')
-            if ',' in dataFuryArr[1]:
-                # holdover comes with extra info, see manual
-                pB.payload = dataFuryArr[1].split(',')[0]
-            elif '%' in dataFuryArr[1]:
-                # there is % in one readout included
+            if dataFury[-6:] != 'scpi > ':
+                time.sleep(0.2)
+                dataFury += pB.dev.instr.read()
+            if pB.param in ['scpi/measure/current', 'scpi/measure/volt', 'scpi/measure/temperature', 'scpi/gps/reference/traim/rsvids','scpi/gps/reference/pulse','scpi/gps/reference/pulse/sawtooth','scpi/gps/reference/pulse/accuracy', 'scpi/gps/satellite/tracking/count', 'scpi/gps/satellite/visible/count', 'scpi/synchronisation/feestimate', 'scpi/synchronisation/tinterval', 'scpi/synchronisation/source/state', 'scpi/diagnostic/roscillator/efcontrol/relative', 'scpi/ptime/time', 'scpi/ptime/date', 'scpi/ptime/tzone']:
                 pB.payload = dataFuryArr[1].replace('%','')
+            elif pB.param == 'scpi/synchronisation/holdover/duration':
+                pB.payload = dataFuryArr[1].split(',')[0]
+            elif pB.param == 'scpi/gps/position/hold/last':
+                pB.payload = ';'.join(dataFuryArr[1:4]).replace('\r','').replace('\n','')
+            elif pB.param == 'scpi/synchronisation/locked':
+                if '1' in dataFury:
+                    pB.payload = 'true'
+                elif '0' in dataFury:
+                    pB.payload = 'false'
+                else:
+                    self.log.new_log(('No 0, no 1: %s' % dataFury),
+                        "ERROR")
             else:
-                pB.payload = dataFuryArr[1]
+                pB.payload = dataFury
         except:
             self.attempt += 1
             # first readout fails rather often
             if self.attempt < 5:
                 self.read_convert_furyData(pB)
             else:
-                self.dev.pB.log.new_log(('No Fury data format after 5 attempts: %s' % dataFury),
+                self.log.new_log(('No Fury data format after 5 attempts: %s' % dataFury),
                         "ERROR")
 
     def scpi_write(self, pB):
