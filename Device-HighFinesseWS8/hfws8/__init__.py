@@ -221,15 +221,18 @@ class LaserLock():
             self.locked = False
             self.dev.params['locks/'+self.name+'/locked'].publish_value(False)
             if freqNew < 0:
-                #self.dev.log.new_log('Error: {}. Switching off lock.'.format(freqNew))
-                #self.stop()
-                self.dev.log.new_log('Warning: {}. Measured frequency is not valid. Skipping it.'.format(freqNew))
+                self.dev.log.new_log('{}. Measured frequency is not valid. Skipping it.'.format(freqNew), 'WARNING')
                 self.roll_and_append_error(0.)
                 return False
             else:
-                if abs(error) > self.maxdifference:
+                if self.maxdifference < abs(error) < 5e3: # 5 GHz threshold
                     self.dev.log.new_log('Laser lock {}: value difference cut.'.format(self.name))
-                    laserSetDiff = np.sign(error) * np.sign(self.ki) * self.maxdifference
+                    laserSetDiff = np.sign(error) * np.sign(self.kp) * self.maxdifference
+                    self.laser.set_value_diff(laserSetDiff)
+                    return True
+                else:
+                    self.dev.log.new_log('Laser lock {} is off by more than 5 GHz.'.format(self.name), 'INFO')
+                    self.stop()
                 self.dev.params['channel/'+str(self.wavemeterchannel
                                                )+'/frequency'].publish_value(freqNew)
         else:
