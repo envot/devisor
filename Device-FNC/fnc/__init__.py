@@ -158,7 +158,7 @@ class DeviceClass(DeviceBase):
         No returns
         """
 
-        self.connection = serialPackage.ConnectionClass(devisor=self.devisor, address=self.address, baudrate=9600)
+        self.connection = serialPackage.ConnectionClass(devisor=self.devisor, address=self.address)
 
         # Start reading thread
         self.stopThreads = False
