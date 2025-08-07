@@ -84,7 +84,7 @@ class DeviceClass(DeviceBase):
     Class is used to communicate with Bridge device using serial connection.
     """
 
-    def init_pre(self, address="/dev/ttyACM0"):
+    def init_pre(self, address="/dev/ttyACM0,9600"):
         """
         This function is used to initialize parameters.
 
@@ -124,7 +124,7 @@ class DeviceClass(DeviceBase):
         No returns
         """
 
-        self.connection = serialPackage.ConnectionClass(devisor=self.devisor, address=self.address, baudrate=9600)
+        self.connection = serialPackage.ConnectionClass(devisor=self.devisor, address=self.address)
 
         # Start reading thread
         self.stopThreads = False

@@ -118,7 +118,7 @@ class DeviceClass(DeviceBase):
     Class is used to communicate with FNC device using serial communication.
     """
 
-    def init_pre(self, address="/dev/ttyACM1"):
+    def init_pre(self, address="/dev/ttyACM1,9600"):
         """
         This function is used to initialize parameters.
 

@@ -2,8 +2,8 @@ import setuptools
 
 setuptools.setup(
     name="device-bridge",
-    version="0.1.2",
-    author="Ceki99",
+    version="0.1.3",
+    author="Ceki99, schueppi",
     author_email="antonio.cerovic@gmail.com",
     description="A device to handle Bridge device.",
     packages=setuptools.find_packages(),
