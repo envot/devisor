@@ -10,7 +10,8 @@ import os
 import sys
 import signal
 
-from devisor.devisor import DeVisor, get_hostname, make_homie_name, DeVisorDummy
+from devisor.devisor import DeVisor, get_hostname, make_homie_name
+from devisor.devisordummy import DeVisorDummy
 from devisor.devisorbase import devisor_import
 from devisor.connections import Connections
 

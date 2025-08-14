@@ -5,7 +5,7 @@
 # Klemens Schueppert : schueppi@envot.io
 
 import os
-from ..devisor import devisor_import
+from ..devisorbase import devisor_import
 
 class Connections():
     def __init__(self, devisor):

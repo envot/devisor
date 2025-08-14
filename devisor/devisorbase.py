@@ -360,3 +360,4 @@ def install_package(package):
     directory = os.path.dirname(inspect.getfile(mqttlog))+'/'+TYPE_DICT[package_type]+'/'
     return subprocess.run([sys.executable, "-m", "pip", "install", package, '--no-index', '--find-links', urlstr+package, '-t', directory],
             capture_output=True)
+

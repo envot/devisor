@@ -341,15 +341,3 @@ class DeVisor(DeviceBase):
             else:
                 self.otherDevices[topicFolder] = payload
                 self.check_name('')
-
-class DeVisorDummy():
-    """
-    Dummy class to fake devisor
-    """
-    def __init__(self, device_name, host, port):
-        self.log = mqttlog.MQTTLog(self)
-        self.runningConnections = connections.Connections(self)
-        self.host = host
-        self.port = port
-        self.name = device_name
-        self.ip = device_name.split('-')[0]
