@@ -49,6 +49,12 @@ pressure['img1'] = {
     'unit' : 'mbar',
 }
 
+pressure['aux1'] = {
+    'valueInit' : '',
+    'settable' : False,
+    'unit' : 'mbar',
+}
+
 initNodes['pressure'] = pressure
 
 
@@ -57,7 +63,7 @@ class DeviceClass(DeviceBase):
     This class is used to communicate with Agilent XGS-600 device over the serial port.
     """
 
-    def init_pre(self, port_name="/dev/ttyUSB1"):
+    def init_pre(self, port_name="/dev/ttyUSB0"):
         """
         Constructor of the class.
 
@@ -85,7 +91,7 @@ class DeviceClass(DeviceBase):
 
         # Commands that need processing
         self.responses = {"read_pressure_3": lambda x: float(x),
-                          "read_pressure_dump": lambda x: [i.strip() if i.strip()=="OPEN" else float(i) for i in x.split(",")],
+                          "read_pressure_dump": lambda x: [i.strip() if i.strip() in ["OPEN","NOCBL"] else float(i) for i in x.split(",")],
                           "read_pressure_units": lambda x: {"00":"Torr", "01":"mBar", "02":"Pascal"}[x]}
 
         # Open serial port
@@ -163,7 +169,6 @@ class DeviceClass(DeviceBase):
 
         if next_message == "":
             return "Read timeout"
-
         # Process message
         try:
             if next_message.startswith("?FF"):
@@ -217,11 +222,12 @@ class DeviceClass(DeviceBase):
         pressure = self.write_read_serial("read_pressure_dump")
 
         try:
-            if len(pressure) < 3:
+            if len(pressure) < 5:
                 self.dev.log.new_log(f"Incomplete pressure dump.", 'WARNING')
             else:
-                self.dev.params['pressure/cnv1'].publish_value(pressure[0])
-                self.dev.params['pressure/img1'].publish_value(pressure[2])
+                self.dev.params['pressure/aux1'].publish_value(pressure[0])
+                self.dev.params['pressure/cnv1'].publish_value(pressure[2])
+                self.dev.params['pressure/img1'].publish_value(pressure[4])
         except:
             self.dev.log.new_log(f"Pressure dump reading failed.", 'WARNING')
 
@@ -239,6 +245,3 @@ class DeviceClass(DeviceBase):
         self.threadsStop = True
         self.pressureReader.join()
         self.close_serial()
-
-
-        
