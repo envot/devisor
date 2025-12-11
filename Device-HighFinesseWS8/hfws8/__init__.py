@@ -113,7 +113,7 @@ class DLCVolt():
 
 def set_lock_value(pB):
     lockName = pB.param.split('/')[1]
-    pB.dev.locks[lockName].__dict__[pB.name.replace('-','')] = pB.value
+    setattr(pB.dev.locks[lockName], pB.name.replace('-',''), pB.value)
 
 def trigger_lock(pB):
     lockName = pB.param.split('/')[1]
