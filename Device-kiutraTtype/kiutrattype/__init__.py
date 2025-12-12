@@ -12,14 +12,18 @@ from .api_client import KiutraClient
 
 
 def rpc_read(pB):
-    return pB.dev.query(pB.initDict['cmd'])
+    return pB.dev.query_value(pB.initDict['cmd'])
 
-def rpc_write(pB):
-    pB.dev.query(pB.initDict['cmd, pB.value'])
+def rpc_set(pB):
+    pB.dev.set_value(pB.initDict['cmd'], pB.value)
 
-def rpc_trigger(pB):
-    pB.dev.call(pB.initDict['cmd'])
-    pB.publish_value(False)
+def rpc_call(pB):
+    pB.dev.call(pB.initDict['cmd'], pB.value)
+
+def rpc_call_trigger(pB):
+    if pB.value:
+        pB.dev.call(pB.initDict['cmd'])
+        pB.publish_value(False)
 
 initNodes = {}
 config = {}
@@ -44,6 +48,18 @@ control['status']={
         'device_func' : rpc_read,
         'cmd' : 'cryostat.runstatus',
         'settable' : False,
+        }
+control['statusinfo']={
+        'valueInit' : '',
+        'device_func' : rpc_read,
+        'cmd' : 'cryostat.status',
+        'settable' : False,
+        }
+control['reset']={
+        'valueInit' : False,
+        'broker_func' : rpc_call_trigger,
+        'cmd' : 'cryostat.reset',
+        'settable' : True,
         }
 control['blocking-devices']={
         'valueInit' : [],
@@ -79,6 +95,63 @@ control['process-step']={
         'cmd' : 'cryostat.detailed_progress',
         'settable' : False,
         }
+control['warmup-setpoint']={
+        'valueInit' : 300.,
+        'device_func' : rpc_read,
+        'broker_func' : rpc_set,
+        'brokerInit' : True,
+        'format' : "0:310",
+        'settable' : True,
+        'cmd' : 'cryostat.warmup_setpoint',
+        'unit': 'K',
+        }
+control['warmup-ramp']={
+        'valueInit' : 1.0,
+        #'device_func' : rpc_read,
+        'broker_func' : rpc_set,
+        'brokerInit' : True,
+        'format' : "-1:1",
+        'settable' : True,
+        'cmd' : 'cryostat.warmup_ramp',
+        'unit': 'K/min',
+        }
+control['soft-cooldown-temperature']={
+        'valueInit' : 150.,
+        'device_func' : rpc_read,
+        'broker_func' : rpc_set,
+        'brokerInit' : True,
+        'format' : "100:280",
+        'settable' : True,
+        'cmd' : 'cryostat.soft_cooldown_temperature',
+        'unit': 'K',
+        }
+control['program-select']={
+        'valueInit' : 'soft_cooldown',
+        'brokerInit' : True,
+        'settable' : True,
+        'readable' : False,
+        'format' : ['cooldown', 'soft_cooldown', 'warmup', 'prepare_purge', 'purge pulse', 'stop_purge', 'warmup_purge', 'return_to_idle', 'initialize', 'evacuate', 'pump_and_heat', 'vent', 'purge_dewar', 'brake_pumps', 'stop_pumps', 'open_gate', 'close_gate', 'check_purge', 'stop_heater', 'start_heater'],
+        }
+def program_start(pB):
+    if pB.value:
+        pB.dev.call('cryostat.start', pB.dev.params['control/program-select'].value)
+        pB.publish_value(False)
+control['program-start']={
+        'valueInit' : False,
+        'broker_func' : program_start,
+        'settable' : True,
+        'readable' : False,
+        }
+def program_stop(pB):
+    if pB.value:
+        pB.dev.call('cryostat.stop')
+        pB.value=False
+control['program-stop']={
+        'valueInit' : False,
+        'broker_func' : program_stop,
+        'settable' : True,
+        'readable' : False,
+        }
 initNodes['control'] = control
 
 compressor = {}
@@ -88,18 +161,10 @@ compressor['status']={
         'cmd' : 'compressor.runstatus',
         'settable' : False,
         }
-compressor['on']={
+compressor['reset']={
         'valueInit' : False,
-        'brokerInit' : False,
-        'broker_func' : rpc_trigger,
-        'cmd' : 'compressor.on',
-        'settable' : True,
-        }
-compressor['off']={
-        'valueInit' : False,
-        'brokerInit' : False,
-        'broker_func' : rpc_trigger,
-        'cmd' : 'compressor.off',
+        'broker_func' : rpc_call_trigger,
+        'cmd' : 'compressor.reset',
         'settable' : True,
         }
 compressor['pressure']={
@@ -112,6 +177,7 @@ compressor['pressure']={
 compressor['operation-hours']={
         'valueInit' : 0.,
         'brokerInit' : True,
+        'cmd' : 'compressor.operating_hours',
         'format' : "0:1000000",
         'settable' : False,
         'unit': 'h',
@@ -173,78 +239,139 @@ temperature['ccr2']={
 temperature['test1']={
         'valueInit' : 0.,
         'device_func' : rpc_read,
-        'cmd' : 'T_test1.kelvin',
-        'format' : "0:500",
+        'cmd' : 'T_test1.sensorunits',
         'settable' : False,
-        'unit': 'K',
         }
 temperature['test2']={
         'valueInit' : 0.,
         'device_func' : rpc_read,
-        'cmd' : 'T_test2.kelvin',
-        'format' : "0:500",
+        'cmd' : 'T_test2.sensorunits',
         'settable' : False,
-        'unit': 'K',
         }
 initNodes['temperature'] = temperature
 
 heater = {}
-heater['status']={
+def start_sample_heater(pB):
+    if pB.dev.up:
+        pB.dev.call('sample_heater.start', (
+            pB.dev.params['heater/sample/setpoint'].value,
+            pB.dev.params['heater/sample/rate'].value))
+def trigger_heater_sample_start(pB):
+    if pB.value and pB.dev.up:
+        start_sample_heater(pB)
+        pB.value=False
+heater['sample/status']={
         'valueInit' : '',
         'device_func' : rpc_read,
-        'cmd' : 'warmup_heater.statusinfo',
+        'cmd' : 'sample_heater.status',
         'settable' : False,
         }
-def rpc_start_heater(pB):
-    setpoint = pB.params['heater/setpoint'].value
-    ramp = pB.params['heater/ramp'].value
-    if pB.value:
-        pB.dev.call('warmup_heater.start',(setpoint, ramp))
-    pB.publish_value(False)
-heater['start']={
+heater['sample/reset']={
         'valueInit' : False,
-        'brokerInit' : True,
-        'broker_func' : rpc_start_heater,
+        'broker_func' : rpc_call_trigger,
+        'cmd' : 'sample_heater.reset',
         'settable' : True,
-        'readable' : False,
         }
-heater['stop']={
-        'valueInit' : False,
-        'brokerInit' : True,
-        'broker_func' : rpc_trigger,
-        'cmd' : 'warmup_heater.stop',
-        'settable' : True,
-        'readable' : False,
-        }
-heater['setpoint']={
+heater['sample/setpoint']={
         'valueInit' : 300.,
+        'device_func' : rpc_read,
+        'broker_func' : rpc_set,
         'brokerInit' : True,
-        'format' : "0:500",
+        'format' : "0:315",
         'settable' : True,
+        'cmd' : 'sample_heater.setpoint',
         'unit': 'K',
         }
-heater['ramp']={
+heater['sample/rate']={
         'valueInit' : 0.5,
+        'broker_func' : start_sample_heater,
         'brokerInit' : True,
         'format' : "-1:1",
         'settable' : True,
+        'readable': True,
+        'cmd' : 'sample_heater.rate',
         'unit': 'K/min',
         }
-heater['current']={
+heater['sample/power']={
         'valueInit' : 0.,
         'device_func' : rpc_read,
-        'cmd' : 'warmup_heater.current',
-        'format' : "0:50",
-        'settable' : True,
-        'unit': 'A',
-        }
-heater['power']={
-        'valueInit' : 0.,
-        'device_func' : rpc_read,
-        'cmd' : 'warmup_heater.power',
+        'cmd' : 'sample_heater.power',
         'format' : "0:50",
         'settable' : True,
         'unit': 'W',
+        }
+heater['sample/start']={
+        'valueInit' : False,
+        'device_func' : trigger_heater_sample_start,
+        'cmd' : 'sample_heater.start',
+        'settable' : True,
+        }
+heater['sample/stop']={
+        'valueInit' : False,
+        'device_func' : rpc_call_trigger,
+        'cmd' : 'sample_heater.stop',
+        'settable' : True,
+        }
+def start_warmup_heater(pB):
+    if pB.dev.up:
+        pB.dev.call('warmup_heater.start', (
+            pB.dev.params['heater/warmup/setpoint'].value,
+            pB.dev.params['heater/warmup/rate'].value))
+def trigger_heater_warmup_start(pB):
+    if pB.value and pB.dev.up:
+        start_warmup_heater(pB)
+        pB.value=False
+heater['warmup/status']={
+        'valueInit' : '',
+        'device_func' : rpc_read,
+        'cmd' : 'warmup_heater.status',
+        'settable' : False,
+        }
+heater['warmup/reset']={
+        'valueInit' : False,
+        'broker_func' : rpc_call_trigger,
+        'cmd' : 'ccr1_heater.reset',
+        'settable' : True,
+        }
+heater['warmup/setpoint']={
+        'valueInit' : 300.,
+        'device_func' : rpc_read,
+        'broker_func' : rpc_set,
+        'brokerInit' : True,
+        'format' : "0:315",
+        'settable' : True,
+        'cmd' : 'ccr1_heater.setpoint',
+        'unit': 'K',
+        }
+heater['warmup/rate']={
+        'valueInit' : 1.0,
+        'broker_func' : start_warmup_heater,
+        'brokerInit' : True,
+        'format' : "-1:1",
+        'settable' : True,
+        'readable': True,
+        'cmd' : 'ccr1_heater.rate',
+        'unit': 'K/min',
+        }
+heater['warmup/power']={
+        'valueInit' : 0.,
+        'device_func' : rpc_read,
+        'cmd' : 'ccr1_heater.power',
+        'format' : "0:50",
+        'settable' : True,
+        'unit': 'W',
+        }
+heater['warmup/start']={
+        'valueInit' : False,
+        'device_func' : trigger_heater_warmup_start,
+        'cmd' : 'ccr1_heater.start',
+        'settable' : True,
+        }
+heater['warmup/stop']={
+        'valueInit' : False,
+        'device_func' : rpc_call_trigger,
+        'cmd' : 'ccr1_heater.stop',
+        'settable' : True,
         }
 initNodes['heater'] = heater
 
@@ -270,20 +397,6 @@ gashandling['turbopump/status']={
         'device_func' : rpc_read,
         'settable' : False,
         'cmd' : 'turbopump.is_on',
-        }
-gashandling['turbopump/start']={
-        'valueInit' : False,
-        'brokerInit' : False,
-        'broker_func' : rpc_trigger,
-        'cmd' : 'turbopump.start',
-        'settable' : True,
-        }
-gashandling['turbopump/stop']={
-        'valueInit' : False,
-        'brokerInit' : False,
-        'broker_func' : rpc_trigger,
-        'cmd' : 'turbopump.stop',
-        'settable' : True,
         }
 gashandling['turbopump/speed']={
         'valueInit' : 0.,
@@ -337,22 +450,6 @@ gashandling['valves/gate/closed']={
         'cmd' : 'gate.is_closed',
         'settable' : False,
         }
-gashandling['valves/gate/open']={
-        'valueInit' : False,
-        'brokerInit' : False,
-        'broker_func' : rpc_trigger,
-        'cmd' : 'gate.open',
-        'settable' : True,
-        'readable' : False,
-        }
-gashandling['valves/gate/close']={
-        'valueInit' : False,
-        'brokerInit' : False,
-        'broker_func' : rpc_trigger,
-        'cmd' : 'gate.closed',
-        'settable' : True,
-        'readable' : False,
-        }
 
 gashandling['valves/main/opened']={
         'valueInit' : False,
@@ -366,23 +463,6 @@ gashandling['valves/main/closed']={
         'cmd' : 'main.is_closed',
         'settable' : False,
         }
-gashandling['valves/main/open']={
-        'valueInit' : False,
-        'brokerInit' : False,
-        'broker_func' : rpc_trigger,
-        'settable' : True,
-        'readable' : False,
-        'cmd' : 'main.open',
-        }
-gashandling['valves/main/close']={
-        'valueInit' : False,
-        'brokerInit' : False,
-        'broker_func' : rpc_trigger,
-        'cmd' : 'main.closed',
-        'settable' : True,
-        'readable' : False,
-        }
-
 gashandling['valves/utility/opened']={
         'valueInit' : False,
         'device_func' : rpc_read,
@@ -396,23 +476,6 @@ gashandling['valves/utility/closed']={
         'settable' : False,
         'cmd' : 'utility.is_closed',
         }
-gashandling['valves/utility/open']={
-        'valueInit' : False,
-        'brokerInit' : False,
-        'broker_func' : rpc_trigger,
-        'cmd' : 'utility.open',
-        'settable' : True,
-        'readable' : False,
-        }
-gashandling['valves/utility/close']={
-        'valueInit' : False,
-        'brokerInit' : False,
-        'broker_func' : rpc_trigger,
-        'cmd' : 'utility.closed',
-        'settable' : True,
-        'readable' : False,
-        }
-
 gashandling['gas/air']={
         'valueInit' : 0.,
         'device_func' : rpc_read,
@@ -434,7 +497,7 @@ initNodes['gashandling'] = gashandling
 
 class DeviceClass(DeviceBase):
     def init_pre(self):
-        self.waittime = 30.
+        self.waittime = 3.
         self.initNodes = initNodes
         self.initedNodes = initNodes
         addressArray = self.address.split(':')
@@ -449,23 +512,50 @@ class DeviceClass(DeviceBase):
         self.ReadOutThread = Timer(waitTime, self.get_all)
         self.ReadOutThread.start()
 
-    def call(self, cmd, value):
+    def call(self, cmd, *args, rep=0, **kwargs):
         try:
-            self.clientKiutra.call(cmd, value)
+            self.clientKiutra.call(cmd, *args, **kwargs)
         except:
-            self.dev.log.new_log('Connection error retry to call"'
-                    +cmd+': '+value+'" in '+self.waittime+'s.')
+            self.dev.log.new_log('Connection error: Retry to call "'
+                    +str(cmd)+'" in '+str(self.waittime)+'s.')
             time.sleep(self.waittime)
-            self.call(cmd, value)
+            rep+=1
+            if rep < 3:
+                self.call(cmd, *args, rep=rep, **kwargs)
+            else:
+                self.dev.log.new_log('Connection not worked after 3 retries "'
+                    +cmd+'" in '+str(self.waittime)+'s.')
+                return False
 
-    def query(self, cmd):
+    def query_value(self, cmd, rep=0):
         try:
             return self.clientKiutra.query(cmd)
         except:
-            self.dev.log.new_log('Connection error retry to query"'
+            self.dev.log.new_log('Connection error: Retry to query "'
                     +cmd+'" in '+str(self.waittime)+'s.')
             time.sleep(self.waittime)
-            return self.query(cmd)
+            rep+=1
+            if rep < 3:
+                return self.query_value(cmd, rep=rep)
+            else:
+                self.dev.log.new_log('Connection not worked after 3 retries "'
+                    +cmd+'" in '+str(self.waittime)+'s.')
+                return False
+
+    def set_value(self, cmd, value, rep=0):
+        try:
+            return self.clientKiutra.set(cmd, value)
+        except:
+            self.dev.log.new_log('Connection error: Retry to set"'
+                    +cmd+'" in '+str(self.waittime)+'s.')
+            time.sleep(self.waittime)
+            rep+=1
+            if rep < 3:
+                return self.set_value(cmd, value, rep=rep)
+            else:
+                self.dev.log.new_log('Connection not worked after 3 retries'
+                    +cmd+'" in '+str(self.waittime)+'s.')
+                return False
 
     def get_all(self):
         starttime = time.time()
@@ -478,7 +568,7 @@ class DeviceClass(DeviceBase):
                 self.params['config/refresh-interval'].value)-time.time()+starttime)
 
     def read_compressor(self):
-        data_dict = self.query('compressor.data')
+        data_dict = self.query_value('compressor.data')
         if type(data_dict) != type(None):
             self.params['compressor/status'].publish_value(data_dict['runstatus'])
             self.params['compressor/error/water-flow'].publish_value(data_dict['waterflow_error'])
