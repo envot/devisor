@@ -59,7 +59,10 @@ class ParameterProcessor():
         if 'brokerInit' in initDict:
             if initDict['brokerInit']:
                 if self.param in self.dev.initBrokerMsgs:
-                    self.broker(self.dev.initBrokerMsgs[param])
+                    if self.dev.initBrokerMsgs[param] == self.payload:
+                        self.broker_func(self)
+                    else:
+                        self.broker(self.dev.initBrokerMsgs[param])
             else:
                 self.device()
         else:
