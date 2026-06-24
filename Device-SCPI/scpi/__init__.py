@@ -340,13 +340,12 @@ class DeviceClass(DeviceBase):
             for i,chan in enumerate(channels):
                 chanstr = str(chan)
                 cmdstr = self._insert_channels(cmd, chanstr)
-                paramDict = { 'brokerInit': False }
+                paramDict = { 'brokerInit': False,
+                             'settable': True,
+                             'readable': True,
+                             'selection': False}
                 paramDict.update(self.scpiDict[cmd])
                 name = cmdstr.replace(':','/')
-                if not ('settable' in paramDict):
-                    paramDict['settable'] = True
-                if not ('readable' in paramDict):
-                    paramDict['readable'] = True
                 if paramDict['readable']:
                     self.scpi_readables.append(name)
                     if type(paramDict['valueInit']) == bool:
